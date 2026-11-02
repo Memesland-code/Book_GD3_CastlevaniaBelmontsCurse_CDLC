@@ -1,9 +1,12 @@
+using System;
+using Unity.Cinemachine;
 using UnityEngine;
 
 public class PlayerController : MonoBehaviour
 {
 	private Rigidbody rb;
 	private InputManager inputs;
+	private CinemachineCamera camera;
 	
 	[Space(10), Header("Movement")]
 	private bool isFacingRight = true;
@@ -35,6 +38,12 @@ public class PlayerController : MonoBehaviour
 		inputs = GetComponent<InputManager>();
 		rb = GetComponent<Rigidbody>();
 		groundDetector = GetComponentInChildren<GroundDetector>();
+		camera = GameObject.FindWithTag("MainCamera").GetComponent<CinemachineCamera>();
+	}
+
+	private void Start()
+	{
+		camera.Target.TrackingTarget = transform;
 	}
 
 	private void Update()
