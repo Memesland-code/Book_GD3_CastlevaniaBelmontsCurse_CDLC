@@ -12,7 +12,7 @@ public class PlayerController : MonoBehaviour
 	private bool isFacingRight = true;
 	[SerializeField] private float groundSpeed;
 	[SerializeField] private float airSpeed;
-	private const float FastFallingFactor = 1.05f;
+	private const float FastFallingFactor = 1.0f;
 	
 	[Space(10), Header("Jump")]
 	[SerializeField] private float upForce;
