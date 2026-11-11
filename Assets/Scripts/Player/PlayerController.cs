@@ -7,46 +7,85 @@ using UnityEngine;
 [RequireComponent(typeof(LedgeGrab))]
 public class PlayerController : MonoBehaviour
 {
-	private Rigidbody rb;
-	private InputManager inputs;
-	private CinemachineCamera camera;
-	private LedgeGrab ledgeGrab;
-	private GroundDetector groundDetector;
-	private CapsuleCollider capsuleCollider;
-	
-	public bool IsGrounded => groundDetector != null && groundDetector.touched;
-	
-	[Space(10), Header("Movement")]
-	private bool isFacingRight = true;
+	[Header("Movement Settings")]
 	[SerializeField] private float groundSpeed = 7.5f;
 	[SerializeField] private float airSpeed = 8.5f;
-	private const float FastFallingFactor = 1.0f;
 	
-	[Space(10), Header("Jump")]
+	[Space(10), Header("Jump Settings")]
 	[SerializeField] private float upForce = 2.5f;
-	[SerializeField] private float gravityScale = 4.5f;
-	private int currentJumpsCombo;
-	[SerializeField] private int maxJumpsNumber = 0;
+	[SerializeField] private float lowJumpGravityScale = 4.5f;
+	[SerializeField] private float gravityScale = 5f;
+	[SerializeField] private float fastFallingFactor = 1.0f;
+	[SerializeField] private int maxAirJumpsNumber;
 	
-	[Space(10), Header("AirMaterials")]
+	[Space(10), Header("Physic Materials")]
 	[SerializeField] private PhysicsMaterial groundMaterial;
 	[SerializeField] private PhysicsMaterial airMaterial;
 	
-	// Cheat codes
+	
+	//* Internal Components
+	private CinemachineCamera camera;
+	private GroundDetector groundDetector;
+	private CapsuleCollider capsuleCollider;
+	private RigidbodyConstraints originalConstraints;
+	
+	
+	//* Public Getters for PlayerState
+	public InputManager Input { get; private set; }
+	public Rigidbody Rigidbody { get; private set; }
+	public LedgeGrab LedgeDetector { get; private set; }
+
+	// Jump Settings
+	public float GroundSpeed => groundSpeed;
+	public float AirSpeed => airSpeed;
+	public bool CanJump => currentJumpsCombo < maxAirJumpsNumber;
+
+	// Gravity Related
+	public float LowJumpGravityScale => lowJumpGravityScale;
+	public float GravityScale => gravityScale;
+	
+	// Other
+	public bool IsGrounded => groundDetector != null && groundDetector.touched;
+	public RigidbodyConstraints OriginalConstraints => originalConstraints;
+
+
+	//* State Machine & states instances
+	public PlayerStateMachine StateMachine { get; private set; }
+	public PlayerGroundedState GroundedState { get; private set; }
+	public PlayerAirState AirState { get; private set; }
+	public PlayerLedgeHangingState LedgeHangingState { get; private set; }
+	public PlayerLedgeClimbingState LedgeClimbingState { get; private set; }
+	
+	
+	//* General
+	private int currentJumpsCombo;
+	private bool isFacingRight = true;
+	
+	
+	
+	[Space(20), Header("Cheat Codes")]
 	public bool noClip;
 
 	
 
 	private void Awake()
 	{
+		Rigidbody = GetComponent<Rigidbody>();
+		Input = GetComponent<InputManager>();
+		LedgeDetector = GetComponent<LedgeGrab>();
 		capsuleCollider = GetComponent<CapsuleCollider>();
-		inputs = GetComponent<InputManager>();
-		rb = GetComponent<Rigidbody>();
-		ledgeGrab = GetComponent<LedgeGrab>();
 		groundDetector = GetComponentInChildren<GroundDetector>();
+		originalConstraints = Rigidbody.constraints;
 
 		GameObject camObj = GameObject.FindWithTag("MainCamera");
 		if (camObj != null) camera = camObj.GetComponent<CinemachineCamera>();
+		
+		// State machine states init
+		StateMachine = new PlayerStateMachine();
+		GroundedState = new PlayerGroundedState(this, StateMachine);
+		AirState = new PlayerAirState(this, StateMachine);
+		LedgeHangingState = new PlayerLedgeHangingState(this, StateMachine);
+		LedgeClimbingState = new PlayerLedgeClimbingState(this, StateMachine);
 	}
 
 	
@@ -57,97 +96,135 @@ public class PlayerController : MonoBehaviour
 		{
 			camera.Target.TrackingTarget = transform;
 		}
+		
+		StateMachine.Initialize(GroundedState);
 	}
 
 	
 	
 	private void Update()
 	{
-		// Detach character from ledge and perform a jump
-		if (ledgeGrab.JumpRequestedFromLedge)
-		{
-			ledgeGrab.ClearJumpRequest();
-			ExecuteJump();
-		}
-		
-		// Handle ledge grab & climb states
-		if (ledgeGrab.IsHanging || ledgeGrab.IsClimbing) return;
-		
-		
-		if (transform.rotation.eulerAngles.y == 0) transform.rotation = Quaternion.Euler(0, 90, 0);
-		    
-		// Check player facing direction and change on movement direction 
-		if (inputs.Move.x < 0 && isFacingRight)
-		{
-			isFacingRight = false;
-			transform.rotation = Quaternion.Euler(0, -90, 0);
-		}
-		else if (inputs.Move.x > 0 && !isFacingRight)
-		{
-			isFacingRight = true;
-			transform.rotation = Quaternion.Euler(0, 90, 0);
-		}
-		
-		
-		// Ground check & materials
-		if (!IsGrounded)
-		{
-			if (rb.linearVelocity.magnitude > 0.0f)
-			{
-				capsuleCollider.sharedMaterial = airMaterial;
-			}
-		}
-		else
-		{
-			capsuleCollider.sharedMaterial = groundMaterial;
-			currentJumpsCombo = 0;
-		}
-		
-		
-		// Velocity & Gravity processing
-		float realGravity = rb.linearVelocity.y >= 0 ? rb.linearVelocity.y : rb.linearVelocity.y * FastFallingFactor;
-		realGravity = Mathf.Max(realGravity, -15);
-		    
-		float realSpeed = IsGrounded ? groundSpeed : airSpeed;
-		Vector3 horizontalMove = new(inputs.Move.x * realSpeed, 0, 0);
-		
-		if (noClip)
-		{
-			transform.position += new Vector3(inputs.Move.x / 2, inputs.Move.y / 2, 0);
-		}
-		else
-		{
-			rb.linearVelocity = new Vector3(0, realGravity, 0) + horizontalMove;
-		}
+		StateMachine.CurrentState.HandleInput();
+		StateMachine.CurrentState.LogicUpdate();
 	}
 	
 	
 	
 	private void FixedUpdate()
 	{
-		if (rb.isKinematic || noClip) return;
+		StateMachine.CurrentState.PhysicsUpdate();
+	}
+	
+	
+	
+	// ---- State machine functions ----
+	
+	
+	
+	public void ApplyHorizontalMovement(float speed)
+	{
+		if (Input == null || Rigidbody == null) return;
+
+		// Fast falling & gravity clamp logic
+		float realGravity = Rigidbody.linearVelocity.y >= 0 
+			? Rigidbody.linearVelocity.y 
+			: Rigidbody.linearVelocity.y * fastFallingFactor;
+        
+		realGravity = Mathf.Max(realGravity, -15f);
+
+		Vector3 horizontalMove = new Vector3(Input.Move.x * speed, 0f, 0f);
+
+		if (noClip)
+		{
+			transform.position += new Vector3(Input.Move.x / 2f, Input.Move.y / 2f, 0f);
+		}
+		else
+		{
+			Rigidbody.linearVelocity = new Vector3(0f, realGravity, 0f) + horizontalMove;
+		}
+	}
+
+
+	
+	public void UpdateFacingDirection()
+	{
+		if (Input == null) return;
+
+		// Lock baseline Y rotation to 90 degrees if reset
+		if (transform.rotation.eulerAngles.y == 0f)
+		{
+			transform.rotation = Quaternion.Euler(0f, 90f, 0f);
+		}
+
+		if (Input.Move.x < 0f && isFacingRight)
+		{
+			isFacingRight = false;
+			transform.rotation = Quaternion.Euler(0f, -90f, 0f);
+		}
+		else if (Input.Move.x > 0f && !isFacingRight)
+		{
+			isFacingRight = true;
+			transform.rotation = Quaternion.Euler(0f, 90f, 0f);
+		}
+	}
+	
+	
+	
+	public void ExecuteJump()
+	{
+		float jumpForce = Mathf.Sqrt(upForce * -3 * (Physics.gravity.y * gravityScale));
 		
-		rb.AddForce(Physics.gravity * ((gravityScale - 1f) * rb.mass));
+		Rigidbody.linearVelocity = new Vector3(Rigidbody.linearVelocity.x, 0f, 0f);
+		Rigidbody.AddForce(Vector3.up * jumpForce, ForceMode.Impulse);
+		currentJumpsCombo++;
 	}
 
 	
 	
-	public void Jump()
+	public void ResetJumpsCombo()
 	{
-		if (ledgeGrab != null && (ledgeGrab.IsHanging || ledgeGrab.IsClimbing)) return;
+		currentJumpsCombo = 0;
+	}
 
-		if (IsGrounded || currentJumpsCombo < maxJumpsNumber)
-		{
-			ExecuteJump();
-		}
-    }
-
-	private void ExecuteJump()
+	
+	
+	public void ApplyGravityForce(float scale)
 	{
-		float jumpForce = Mathf.Sqrt(upForce * -3 * (Physics.gravity.y * gravityScale));
-		
-		rb.linearVelocity = new Vector3(rb.linearVelocity.x, 0f, 0f);
-		rb.AddForce(Vector3.up * jumpForce, ForceMode.Impulse);
-		currentJumpsCombo++;
+		if (Rigidbody.isKinematic) return;
+		Rigidbody.AddForce(Physics.gravity * ((scale - 1f) * Rigidbody.mass));
+	}
+
+	
+	
+	public void SetPhysicsMaterial(bool isGrounded)
+	{
+		capsuleCollider.sharedMaterial = isGrounded ? groundMaterial : airMaterial;
+	}
+
+	
+	
+	public void FreezePhysicsForLedge()
+	{
+		Rigidbody.linearVelocity = Vector3.zero;
+		Rigidbody.isKinematic = true;
+		Rigidbody.constraints = RigidbodyConstraints.FreezeAll;
+	}
+
+	
+	
+	public void UnfreezePhysicsFromLedge()
+	{
+		Rigidbody.isKinematic = false;
+		Rigidbody.constraints = originalConstraints;
+	}
+	
+	
+
+	public void AlignToLedge()
+	{
+		Vector3 hangPosition = LedgeDetector.CurrentLedgeHit.point - (transform.forward * LedgeDetector.WallDistanceOffset);
+		hangPosition.y -= (LedgeDetector.LedgeCheckOrigin.position.y - transform.position.y);
+		transform.position = hangPosition;
+		transform.rotation = Quaternion.LookRotation(-LedgeDetector.CurrentWallHit.normal);
 	}
 }

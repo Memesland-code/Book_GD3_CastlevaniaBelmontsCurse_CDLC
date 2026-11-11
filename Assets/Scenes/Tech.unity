@@ -3687,7 +3687,6 @@ GameObject:
   - component: {fileID: 1434472167}
   - component: {fileID: 1434472166}
   - component: {fileID: 1434472171}
-  - component: {fileID: 1434472170}
   - component: {fileID: 1434472172}
   - component: {fileID: 1434472174}
   - component: {fileID: 1434472175}
@@ -3794,36 +3793,6 @@ Transform:
   - {fileID: 625883666}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1434472170
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1434472165}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 62899f850307741f2a39c98a8b639597, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Unity.InputSystem::UnityEngine.InputSystem.PlayerInput
-  m_Actions: {fileID: -944628639613478452, guid: 35845fe01580c41289b024647b1d1c53, type: 3}
-  m_NotificationBehavior: 1
-  m_UIInputModule: {fileID: 0}
-  m_DeviceLostEvent:
-    m_PersistentCalls:
-      m_Calls: []
-  m_DeviceRegainedEvent:
-    m_PersistentCalls:
-      m_Calls: []
-  m_ControlsChangedEvent:
-    m_PersistentCalls:
-      m_Calls: []
-  m_ActionEvents: []
-  m_NeverAutoSwitchControlSchemes: 0
-  m_DefaultControlScheme: 
-  m_DefaultActionMap: Player
-  m_SplitScreenIndex: -1
-  m_Camera: {fileID: 0}
 --- !u!54 &1434472171
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -3863,7 +3832,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e9caf98cb580f4246a0f28c132f092db, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::InputManager
-  jump: 0
 --- !u!114 &1434472174
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3878,9 +3846,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PlayerController
   groundSpeed: 7.5
   airSpeed: 8.5
-  upForce: 2.5
-  gravityScale: 4.5
-  maxJumpsNumber: 0
+  upForce: 4
+  lowJumpGravityScale: 4.5
+  gravityScale: 2
+  fastFallingFactor: 1.05
+  maxAirJumpsNumber: 0
   groundMaterial: {fileID: 13400000, guid: e279ffea49e38144680ac07086337245, type: 2}
   airMaterial: {fileID: 13400000, guid: 10ede9b8ccc6d07498c2468ded23156e, type: 2}
   noClip: 0
@@ -3905,8 +3875,9 @@ MonoBehaviour:
     m_Bits: 8
   maxWallAngleY: 0.3
   minLedgeFlatness: 0.7
+  wallDistanceOffset: 0.5
   climbOffset: {x: 0, y: 1.8, z: 0.6}
-  climbDuration: 0.2
+  climbDuration: 0.15
   ledgeReleaseCooldown: 0.1
   hangTimerCooldown: 0.1
 --- !u!1 &1441928451
