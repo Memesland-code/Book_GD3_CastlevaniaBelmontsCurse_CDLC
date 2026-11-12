@@ -1,5 +1,3 @@
-using UnityEngine;
-
 public class PlayerAirState : PlayerState
 {
 	public PlayerAirState(PlayerController player, PlayerStateMachine stateMachine) : base(player, stateMachine) { }
@@ -38,6 +36,13 @@ public class PlayerAirState : PlayerState
 			return;
 		}
 		
+		// Grid platform check
+		if (player.TryGrabGridPlatform(out GridPlatform gridPlatform))
+		{
+			player.EnterGridHang(gridPlatform);
+			return;
+		}
+		
 		// Wall slide check
 		if (player.Rigidbody.linearVelocity.y <= player.MaxWallGrabUpwardVelocity && player.CanGrabWall && player.IsTouchingWall())
 		{
@@ -46,7 +51,14 @@ public class PlayerAirState : PlayerState
 		}
 		
 		// Back to ground
-		if (player.IsGrounded && player.Rigidbody.linearVelocity.y <= 0.1f)
+		/*
+		 if (player.IsGrounded && player.Rigidbody.linearVelocity.y <= 0.1f)
+		{
+			stateMachine.ChangeState(player.GroundedState);
+			return;
+		}
+		*/
+		if (!player.IsJumpGraceActive && player.IsGrounded && player.Rigidbody.linearVelocity.y <= 0.1f)
 		{
 			stateMachine.ChangeState(player.GroundedState);
 			return;

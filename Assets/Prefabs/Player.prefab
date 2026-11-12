@@ -275,20 +275,32 @@ MonoBehaviour:
   ceilingObstacleLayers:
     serializedVersion: 2
     m_Bits: 1
+  maxWallGrabUpwardVelocity: 2.5
   wallClingDuration: 1
   initialWallSlideSpeed: 4
   wallSlideAcceleration: 10
   maxWallSlideSpeed: 12
+  wallCoyoteDuration: 0.14
   wallJumpForce: {x: 10, y: 14}
   wallJumpInputLockDuration: 0.14
   wallGrabCooldownDuration: 0.15
   wallCheckDistance: 0.6
-  wallCheckUpperHeight: 1.6
+  wallCheckUpperHeight: 1.8
   wallCheckLowerHeight: 0.5
   wallLayers:
     serializedVersion: 2
     m_Bits: 1
+  gridPlatformLayer:
+    serializedVersion: 2
+    m_Bits: 256
+  gridHangHandHeight: 2.2
+  gridGrabInputLockDuration: 0
+  gridClimbDuration: 0.1
+  gridClimbStepX: 0.1
+  gridDropThroughDuration: 0.3
+  gridDropDownSpeed: 25
   noClip: 0
+  currentStateName: 
 --- !u!114 &4960311334494505207
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -303,7 +315,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::LedgeGrab
   wallCheckOrigin: {fileID: 6709844465119777598}
   ledgeCheckOrigin: {fileID: 7492061745116743060}
-  wallCheckDistance: 0.7
+  wallCheckDistance: 0.75
   ledgeCheckDistance: 0.5
   ignoreLayers:
     serializedVersion: 2

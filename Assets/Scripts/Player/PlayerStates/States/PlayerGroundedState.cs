@@ -15,17 +15,29 @@ public class PlayerGroundedState : PlayerState
     
     public override void HandleInput()
     {
-	    // Manage only slide when player pushes slide & right/left at the same time
-	    if (player.Input.SlidePressedThisFrame && Mathf.Abs(player.Input.Move.x) > 0.1f)
+	    if (player.Input.Move.y < -0.5f && player.Input.JumpPressedThisFrame)
 	    {
-		    stateMachine.ChangeState(player.SlideState);
-		    return;
+		    GridPlatform standingGrid = player.GetStandingGridPlatform();
+		    if (standingGrid != null)
+		    {
+			    player.StartGridDropThrough(standingGrid);
+			    stateMachine.ChangeState(player.AirState);
+			    return;
+		    }
 	    }
 	    
 	    if (player.Input.JumpPressedThisFrame)
 	    {
 		    player.ExecuteJump();
 		    stateMachine.ChangeState(player.AirState);
+		    return;
+	    }
+	    
+	    // Manage only slide when player pushes slide & right/left at the same time
+	    if (player.Input.SlidePressedThisFrame && Mathf.Abs(player.Input.Move.x) > 0.1f)
+	    {
+		    stateMachine.ChangeState(player.SlideState);
+		    return;
 	    }
     }
 

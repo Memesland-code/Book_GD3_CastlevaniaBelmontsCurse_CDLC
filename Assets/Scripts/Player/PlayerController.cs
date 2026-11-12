@@ -1,3 +1,4 @@
+using JetBrains.Annotations;
 using Unity.Cinemachine;
 using UnityEngine;
 
@@ -91,6 +92,27 @@ public class PlayerController : MonoBehaviour
 	[SerializeField] private LayerMask wallLayers;
 	
 	
+	[Space(10), Header("Grid Platform")]
+	[SerializeField] private LayerMask gridPlatformLayer;
+	[Tooltip("Hands height when suspended")]
+	[SerializeField] private float gridHangHandHeight = 2.2f;
+	
+	[Tooltip("Short delay after grabbing platform (s)")]
+	[SerializeField] private float gridGrabInputLockDuration = 0.1f;
+	
+	[Tooltip("Time to climb up on platform")]
+	[SerializeField] private float gridClimbDuration = 0.14f;
+	
+	[Tooltip("Optionnal x offset when Move.x is pressed while climbing")]
+	[SerializeField] private float gridClimbStepX = 0.35f;
+	
+	[Tooltip("Duration of grid platform to be ignored while passing through")]
+	[SerializeField] private float gridDropThroughDuration = 0.25f;
+	
+	[Tooltip("Downwards impulse to go through grid (m/s)")]
+	[SerializeField] private float gridDropDownSpeed = 8.5f;
+	
+	
 	
 	//* Internal Components
 	private CinemachineCamera camera;
@@ -131,6 +153,13 @@ public class PlayerController : MonoBehaviour
 	public Vector2 WallJumpForce => wallJumpForce;
 	public bool CanWallCoyoteJump => wallCoyoteTimer > 0f;
 	public int LastWallDirection => lastWallDirection;
+	
+	// Grid platform
+	public GridPlatform CurrentGridPlatform { get; private set; }
+	public float GridGrabInputLockDuration => gridGrabInputLockDuration;
+	public float GridClimbDuration => gridClimbDuration;
+	public float GridClimbStepX => gridClimbStepX;
+	public bool CanGrabGrid => gridDropThroughTimer <= 0f;
 
 	// Other
 	public bool IsGrounded => groundDetector != null && groundDetector.touched;
@@ -139,6 +168,7 @@ public class PlayerController : MonoBehaviour
 	public bool IsWallJumpInputLocked => wallJumpInputLockTimer > 0f;
 	public bool IsFacingRight => isFacingRight;
 	public int FacingDirection => IsFacingRight ? 1 : -1;
+	public bool IsJumpGraceActive => jumpGraceTimer > 0f;
 
 	
 
@@ -151,6 +181,7 @@ public class PlayerController : MonoBehaviour
 	public PlayerRespawnState RespawnState { get; private set; }
 	public PlayerSlideState SlideState { get; private set; }
 	public PlayerWallState WallState { get; private set; }
+	public PlayerGridHangingState GridHangingState { get; private set; }
 	
 	
 	
@@ -160,6 +191,11 @@ public class PlayerController : MonoBehaviour
 	private float standingHeight;
 	private float wallCoyoteTimer;
 	private int lastWallDirection;
+	private float jumpGraceTimer;
+	
+	private GridPlatform ignoredGridPlatform;
+	private float gridDropThroughTimer;
+	private readonly Collider[] nearbyGridBuffer = new Collider[8];
 	
 	// Internal timers
 	private float wallGrabCooldownTimer;
@@ -169,6 +205,11 @@ public class PlayerController : MonoBehaviour
 	
 	[Space(20), Header("Cheats")]
 	public bool noClip;
+	
+	#if UNITY_EDITOR
+	[Space(10), Header("Debug")]
+	[SerializeField][UsedImplicitly] private string currentStateName;
+	#endif
 
 	
 
@@ -195,6 +236,7 @@ public class PlayerController : MonoBehaviour
 		RespawnState = new PlayerRespawnState(this, StateMachine);
 		SlideState = new PlayerSlideState(this, StateMachine);
 		WallState = new PlayerWallState(this, StateMachine);
+		GridHangingState = new PlayerGridHangingState(this, StateMachine);
 
 		standingHeight = capsuleCollider.height;
 	}
@@ -215,9 +257,24 @@ public class PlayerController : MonoBehaviour
 	
 	private void Update()
 	{
+		#if UNITY_EDITOR
+		currentStateName = StateMachine.CurrentState.GetType().Name;
+		#endif
+		
 		if (wallGrabCooldownTimer > 0f) wallGrabCooldownTimer -= Time.deltaTime;
 		if (wallJumpInputLockTimer > 0f) wallJumpInputLockTimer -= Time.deltaTime;
 		if (wallCoyoteTimer > 0f) wallCoyoteTimer -= Time.deltaTime;
+		if (jumpGraceTimer > 0f) jumpGraceTimer -= Time.deltaTime;
+		
+		if (gridDropThroughTimer > 0f)
+		{
+			gridDropThroughTimer -= Time.deltaTime;
+
+			if (gridDropThroughTimer <= 0f)
+			{
+				ignoredGridPlatform = null;
+			}
+		}
 		
 		StateMachine.CurrentState.HandleInput();
 		StateMachine.CurrentState.LogicUpdate();
@@ -227,6 +284,7 @@ public class PlayerController : MonoBehaviour
 	
 	private void FixedUpdate()
 	{
+		UpdateGridPlatformCollisions();
 		StateMachine.CurrentState.PhysicsUpdate();
 	}
 	
@@ -283,10 +341,15 @@ public class PlayerController : MonoBehaviour
 	
 	public void ExecuteJump()
 	{
-		float jumpForce = Mathf.Sqrt(upForce * -3 * (Physics.gravity.y * gravityScale));
+		SetPhysicsMaterial(isGrounded: false);
 		
-		Rigidbody.linearVelocity = new Vector3(Rigidbody.linearVelocity.x, 0f, 0f);
-		Rigidbody.AddForce(Vector3.up * jumpForce, ForceMode.Impulse);
+		//float jumpForce = Mathf.Sqrt(upForce * -3 * (Physics.gravity.y * gravityScale));
+		float jumpVelocity = Mathf.Sqrt(upForce * -3f * (Physics.gravity.y * gravityScale)) / Rigidbody.mass;
+		Rigidbody.linearVelocity = new Vector3(Rigidbody.linearVelocity.x, jumpVelocity, 0);
+		
+		jumpGraceTimer = 0.08f;
+		//Rigidbody.linearVelocity = new Vector3(Rigidbody.linearVelocity.x, 0f, 0f);
+		//Rigidbody.AddForce(Vector3.up * jumpForce, ForceMode.Impulse);
 		currentJumpsCombo++;
 	}
 
@@ -462,6 +525,140 @@ public class PlayerController : MonoBehaviour
 	}
 	
 	
+	// ---- Grid Platforms ----
+
+
+	/// <summary>
+	/// Enable or disables dynamically the collision with nearby GridPlatforms
+	/// </summary>
+	private void UpdateGridPlatformCollisions()
+	{
+		if (capsuleCollider == null) return;
+		
+		// Check for full character surface
+		Vector3 boxCenter = transform.position + Vector3.up * (standingHeight * 0.5f);
+		Vector3 boxHalfExtents = new Vector3(1.5f, standingHeight * 0.75f, 1f);
+		
+		int hitCount = Physics.OverlapBoxNonAlloc(boxCenter, boxHalfExtents, nearbyGridBuffer, Quaternion.identity, gridPlatformLayer, QueryTriggerInteraction.Ignore);
+
+		for (int i = 0; i < hitCount; i++)
+		{
+			if (!nearbyGridBuffer[i].TryGetComponent(out GridPlatform platform)) continue;
+
+			bool isExplicitlyIgnored = (platform == ignoredGridPlatform && gridDropThroughTimer > 0f);
+			bool isHangingOnThis = (StateMachine.CurrentState == GridHangingState && platform == CurrentGridPlatform);
+
+			bool feetAboveSurface = transform.position.y >= (platform.TopSurfaceY - 0.08f);
+
+			bool shouldIgnoreCollision = isExplicitlyIgnored || isHangingOnThis || !feetAboveSurface;
+			Physics.IgnoreCollision(capsuleCollider, platform.PlatformCollider, shouldIgnoreCollision);
+		}
+	}
+
+
+	/// <summary>
+	/// Check while in AirState if character's hands touch a GridPlatform
+	/// </summary>
+	public bool TryGrabGridPlatform(out GridPlatform detectedPlatform)
+	{
+		detectedPlatform = null;
+		if (!CanGrabGrid) return false;
+		
+		Vector3 grabCenter = transform.position + Vector3.up * gridHangHandHeight;
+		Vector3 grabHalfExtents = new Vector3(capsuleCollider.radius * 0.8f, 0.2f, 0.5f);
+		
+		int hitCount = Physics.OverlapBoxNonAlloc(grabCenter, grabHalfExtents, nearbyGridBuffer, Quaternion.identity, gridPlatformLayer, QueryTriggerInteraction.Ignore);
+
+		for (int i = 0; i < hitCount; i++)
+		{
+			if (!nearbyGridBuffer[i].TryGetComponent(out GridPlatform platform)) continue;
+			if (platform == ignoredGridPlatform && gridDropThroughTimer > 0f) continue;
+			
+			// Security to check that characters is under platform to avoid grabbing from above
+			if (transform.position.y < platform.TopSurfaceY - 0.25f)
+			{
+				detectedPlatform = platform;
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+
+	public void EnterGridHang(GridPlatform platform)
+	{
+		CurrentGridPlatform = platform;
+		StateMachine.ChangeState(GridHangingState);
+	}
+
+
+	public void AlignToGridPlatform()
+	{
+		if (CurrentGridPlatform == null) return;
+
+		Vector3 pos = transform.position;
+		pos.y = CurrentGridPlatform.TopSurfaceY - gridHangHandHeight;
+		transform.position = pos;
+	}
+
+
+	public void StartGridDropThrough(GridPlatform platform, bool isFromAbove = true)
+	{
+		if (platform == null) return;
+		
+		ignoredGridPlatform = platform;
+		gridDropThroughTimer = gridDropThroughDuration;
+		Physics.IgnoreCollision(capsuleCollider, platform.PlatformCollider, true);
+
+		if (CurrentGridPlatform == platform)
+		{
+			CurrentGridPlatform = null;
+		}
+
+		float downSpeed = isFromAbove ? gridDropDownSpeed : gridDropDownSpeed / 3;
+		
+		if (Rigidbody != null)
+		{
+			UnfreezePhysicsFromLedge();
+			Rigidbody.linearVelocity = new Vector3(Rigidbody.linearVelocity.x, -downSpeed, 0f);
+		}
+	}
+
+
+	/// <summary>
+	/// Detects if character is currently above a GridPlatform
+	/// </summary>
+	public GridPlatform GetStandingGridPlatform()
+	{
+		Vector3 rayOrigin = transform.position + Vector3.up * 0.15f;
+		if (Physics.Raycast(rayOrigin, Vector3.down, out RaycastHit hit, 0.35f, gridPlatformLayer, QueryTriggerInteraction.Ignore))
+		{
+			return hit.collider.GetComponent<GridPlatform>();
+		}
+
+		return null;
+	}
+
+
+
+	public void CompleteGridClimb()
+	{
+		if (CurrentGridPlatform != null)
+		{
+			Physics.IgnoreCollision(capsuleCollider, CurrentGridPlatform.PlatformCollider, false);
+			CurrentGridPlatform = null;
+		}
+		
+		UnfreezePhysicsFromLedge();
+		Physics.SyncTransforms();
+		
+		// If player holds left/right character start moving right after climbing up
+		float moveX = Input != null ? Input.Move.x : 0f;
+		Rigidbody.linearVelocity = new Vector3(moveX * groundSpeed, 0f, 0f);
+	}
+	
+	
 	// ---- Death & Respawn ----
 
 
@@ -510,5 +707,14 @@ public class PlayerController : MonoBehaviour
 		Gizmos.color = Application.isPlaying && IsTouchingWall() ? Color.cyan : Color.yellow;
 		Gizmos.DrawLine(upperOrigin, upperOrigin + direction * wallCheckDistance);
 		Gizmos.DrawLine(lowerOrigin, lowerOrigin + direction * wallCheckDistance);
+		
+		
+		// Grid platform grab check
+		// Grid Platform grab check
+		Vector3 grabCenter = transform.position + Vector3.up * gridHangHandHeight;
+		Vector3 grabSize = new Vector3(capsuleCollider.radius * 1.6f, 0.4f, 1f);
+
+		Gizmos.color = Color.magenta;
+		Gizmos.DrawWireCube(grabCenter, grabSize);
 	}
 }
