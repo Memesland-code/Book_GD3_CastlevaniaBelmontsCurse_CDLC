@@ -15,10 +15,16 @@ public class PlayerController : MonoBehaviour
 	
 	[Space(10), Header("Jump Settings")]
 	[SerializeField] private float upForce = 2.5f;
+	[SerializeField] private int maxAirJumpsNumber;
+	
+	
+	[Space(10), Header("Gravity & Fall")]
 	[SerializeField] private float lowJumpGravityScale = 4.5f;
 	[SerializeField] private float gravityScale = 5f;
-	[SerializeField] private float fastFallingFactor = 1.0f;
-	[SerializeField] private int maxAirJumpsNumber;
+	[SerializeField] private float fallGravityScale = 8f;
+	[SerializeField] private float maxFallSpeed = 18f;
+	[SerializeField] private float airAcceleration = 45f;
+	[SerializeField] private float airDeceleration = 20f;
 	
 	
 	[Space(10), Header("Physic Materials")]
@@ -47,6 +53,44 @@ public class PlayerController : MonoBehaviour
 	[SerializeField] private LayerMask ceilingObstacleLayers;
 	
 	
+	[Space(10), Header("Wall Cling & Slide")]
+	[Tooltip("Max vertical velocity allowed to cling to wall")]
+	[SerializeField] private float maxWallGrabUpwardVelocity = 2.5f;
+	
+	[Tooltip("How much time does the character stays frozen on the wall before starting to fall (s)")]
+	[SerializeField] private float wallClingDuration = 0.6f;
+	
+	[Tooltip("Down slide start speed (m/s)")]
+	[SerializeField] private float initialWallSlideSpeed = 1.5f;
+	
+	[Tooltip("Down slide acceleration (m/s²)")]
+	[SerializeField] private float wallSlideAcceleration = 6f;
+	
+	[Tooltip("Down slide max speed (m/s)")]
+	[SerializeField] private float maxWallSlideSpeed = 7f;
+	
+	
+	[Header("Wall Jump")]
+	[Tooltip("Grace windows in which player can still jump after leaving a wall (s)")]
+	[SerializeField] private float wallCoyoteDuration = 0.14f;
+	
+	[Tooltip("X = push force opposite from wall, Y = jump height")]
+	[SerializeField] private Vector2 wallJumpForce = new(2f, 4f);
+	
+	[Tooltip("Horizontal input ignore time")]
+	[SerializeField] private float wallJumpInputLockDuration = 0.14f;
+	
+	[Tooltip("Delay before being able to cling to a wall")]
+	[SerializeField] private float wallGrabCooldownDuration = 0.15f;
+
+	
+	[Header("Wall Detection for Cling")]
+	[SerializeField] private float wallCheckDistance = 0.6f;
+	[SerializeField] private float wallCheckUpperHeight = 1.6f; // Chest
+	[SerializeField] private float wallCheckLowerHeight = 0.5f; // knees
+	[SerializeField] private LayerMask wallLayers;
+	
+	
 	
 	//* Internal Components
 	private CinemachineCamera camera;
@@ -68,18 +112,33 @@ public class PlayerController : MonoBehaviour
 	public bool CanJump => currentJumpsCombo < maxAirJumpsNumber;
 
 	// Gravity Related
-	public float LowJumpGravityScale => lowJumpGravityScale;
 	public float GravityScale => gravityScale;
+	public float FallGravityScale => fallGravityScale;
+	public float LowJumpGravityScale => lowJumpGravityScale;
 	
 	// Sliding
 	public float SlideSpeed => slideSpeed;
 	public float SlideEndSpeed => slideEndSpeed;
 	public float SlideDuration => slideDuration;
 	public float SlideConstantRatio => slideConstantRatio;
+	
+	// Wall Cling
+	public float MaxWallGrabUpwardVelocity => maxWallGrabUpwardVelocity;
+	public float WallClingDuration => wallClingDuration;
+	public float InitialWallSlideSpeed => initialWallSlideSpeed;
+	public float WallSlideAcceleration => wallSlideAcceleration;
+	public float MaxWallSlideSpeed => maxWallSlideSpeed;
+	public Vector2 WallJumpForce => wallJumpForce;
+	public bool CanWallCoyoteJump => wallCoyoteTimer > 0f;
+	public int LastWallDirection => lastWallDirection;
 
 	// Other
 	public bool IsGrounded => groundDetector != null && groundDetector.touched;
 	public RigidbodyConstraints OriginalConstraints => originalConstraints;
+	public bool CanGrabWall => wallGrabCooldownTimer <= 0f;
+	public bool IsWallJumpInputLocked => wallJumpInputLockTimer > 0f;
+	public bool IsFacingRight => isFacingRight;
+	public int FacingDirection => IsFacingRight ? 1 : -1;
 
 	
 
@@ -91,13 +150,20 @@ public class PlayerController : MonoBehaviour
 	public PlayerLedgeClimbingState LedgeClimbingState { get; private set; }
 	public PlayerRespawnState RespawnState { get; private set; }
 	public PlayerSlideState SlideState { get; private set; }
+	public PlayerWallState WallState { get; private set; }
 	
 	
 	
 	//* General
-	private int currentJumpsCombo;
 	private bool isFacingRight = true;
+	private int currentJumpsCombo;
 	private float standingHeight;
+	private float wallCoyoteTimer;
+	private int lastWallDirection;
+	
+	// Internal timers
+	private float wallGrabCooldownTimer;
+	private float wallJumpInputLockTimer;
 	
 	
 	
@@ -128,6 +194,7 @@ public class PlayerController : MonoBehaviour
 		LedgeClimbingState = new PlayerLedgeClimbingState(this, StateMachine);
 		RespawnState = new PlayerRespawnState(this, StateMachine);
 		SlideState = new PlayerSlideState(this, StateMachine);
+		WallState = new PlayerWallState(this, StateMachine);
 
 		standingHeight = capsuleCollider.height;
 	}
@@ -148,6 +215,10 @@ public class PlayerController : MonoBehaviour
 	
 	private void Update()
 	{
+		if (wallGrabCooldownTimer > 0f) wallGrabCooldownTimer -= Time.deltaTime;
+		if (wallJumpInputLockTimer > 0f) wallJumpInputLockTimer -= Time.deltaTime;
+		if (wallCoyoteTimer > 0f) wallCoyoteTimer -= Time.deltaTime;
+		
 		StateMachine.CurrentState.HandleInput();
 		StateMachine.CurrentState.LogicUpdate();
 	}
@@ -171,48 +242,41 @@ public class PlayerController : MonoBehaviour
 	public void ApplyHorizontalMovement(float speed)
 	{
 		if (Input == null || Rigidbody == null) return;
-
-		// Fast falling & gravity clamp logic
-		float realGravity = Rigidbody.linearVelocity.y >= 0 
-			? Rigidbody.linearVelocity.y 
-			: Rigidbody.linearVelocity.y * fastFallingFactor;
-        
-		realGravity = Mathf.Max(realGravity, -15f);
-
-		Vector3 horizontalMove = new(Input.Move.x * speed, 0f, 0f);
-
+		
 		if (noClip)
 		{
-			transform.position += new Vector3(Input.Move.x / 2f, Input.Move.y / 2f, 0f);
+			HandleNoClipMovement();
+			return;
 		}
-		else
-		{
-			Rigidbody.linearVelocity = new Vector3(0f, realGravity, 0f) + horizontalMove;
-		}
+		
+		Rigidbody.linearVelocity = new Vector3(Input.Move.x * speed, Rigidbody.linearVelocity.y, 0f);
 	}
-
-
 	
-	public void UpdateFacingDirection()
+	
+	
+	public void SetFacingDirection(bool? forceFaceRight = null)
 	{
-		if (Input == null) return;
-
-		// Lock baseline Y rotation to 90 degrees if reset
-		if (transform.rotation.eulerAngles.y == 0f)
+		if (Mathf.Approximately(transform.rotation.eulerAngles.y, 0f))
 		{
-			transform.rotation = Quaternion.Euler(0f, 90f, 0f);
+			transform.rotation = Quaternion.Euler(0f, isFacingRight ? 90f : -90f, 0f);
 		}
 
-		if (Input.Move.x < 0f && isFacingRight)
+		bool targetFacing = isFacingRight;
+
+		if (forceFaceRight.HasValue)
 		{
-			isFacingRight = false;
-			transform.rotation = Quaternion.Euler(0f, -90f, 0f);
+			targetFacing = forceFaceRight.Value;
 		}
-		else if (Input.Move.x > 0f && !isFacingRight)
+		else if (Input != null)
 		{
-			isFacingRight = true;
-			transform.rotation = Quaternion.Euler(0f, 90f, 0f);
+			if (Input.Move.x < -0.01f) targetFacing = false;
+			else if (Input.Move.x > 0.01f) targetFacing = true;
 		}
+		
+		if (isFacingRight == targetFacing) return;
+		
+		isFacingRight = targetFacing;
+		transform.rotation = Quaternion.Euler(0f, isFacingRight ? 90f : -90f, 0f);
 	}
 	
 	
@@ -239,6 +303,38 @@ public class PlayerController : MonoBehaviour
 	{
 		if (Rigidbody.isKinematic) return;
 		Rigidbody.AddForce(Physics.gravity * ((scale - 1f) * Rigidbody.mass));
+	}
+
+
+
+	public void ClampMaxFallSpeed()
+	{
+		if (Rigidbody == null || noClip) return;
+
+		if (Rigidbody.linearVelocity.y < -maxFallSpeed)
+		{
+			Rigidbody.linearVelocity = new Vector3(Rigidbody.linearVelocity.x, -maxFallSpeed, 0f);
+		}
+	}
+
+
+
+	public void ApplyAirHorizontalMovement(float maxAirSpeed)
+	{
+		if (Input == null || Rigidbody == null) return;
+
+		if (noClip)
+		{
+			HandleNoClipMovement();
+			return;
+		}
+		
+		float targetSpeed = Input.Move.x * maxAirSpeed;
+		float accelRate = Mathf.Abs(targetSpeed) > 0.01f ? airAcceleration : airDeceleration;
+		
+		float newVelocityX = Mathf.MoveTowards(Rigidbody.linearVelocity.x, targetSpeed, accelRate * Time.fixedDeltaTime);
+		
+		Rigidbody.linearVelocity = new Vector3(newVelocityX, Rigidbody.linearVelocity.y, 0f);
 	}
 
 	
@@ -314,7 +410,57 @@ public class PlayerController : MonoBehaviour
 		transform.position = hangPosition;
 		transform.rotation = Quaternion.LookRotation(-LedgeDetector.CurrentWallHit.normal);
 	}
+	
+	
+	// ---- Cling & Wall Jump ----
+	
+	
+	public void StartWallGrabCooldown() => wallGrabCooldownTimer = wallGrabCooldownDuration;
+	public void StartWallJumpInputLock() => wallJumpInputLockTimer = wallJumpInputLockDuration;
+	
 
+	/// <summary>
+	/// Wall detection using chest and knees position to validate real platform
+	/// </summary>
+	public bool IsTouchingWall()
+	{
+		Vector3 direction = Vector3.right * FacingDirection;
+		Vector3 upperOrigin = transform.position + Vector3.up * wallCheckUpperHeight;
+		Vector3 lowerOrigin = transform.position + Vector3.up * wallCheckLowerHeight;
+		
+		bool upperHit = Physics.Raycast(upperOrigin, direction, wallCheckDistance, wallLayers, QueryTriggerInteraction.Ignore);
+		bool lowerHit = Physics.Raycast(lowerOrigin, direction, wallCheckDistance, wallLayers, QueryTriggerInteraction.Ignore);
+		
+		return upperHit && lowerHit;
+	}
+
+
+	public void StartWallCoyoteTime(int wallDir)
+	{
+		lastWallDirection = wallDir;
+		wallCoyoteTimer = wallCoyoteDuration;
+	}
+
+
+	public void ClearWallCoyoteTime()
+	{
+		wallCoyoteTimer = 0f;
+	}
+
+
+	public void PerformWallJump(int wallDir)
+	{
+		ClearWallCoyoteTime();
+		int jumpAwayDirection = -wallDir;
+			
+		SetFacingDirection(jumpAwayDirection > 0);
+			
+		// Push player up + opposite of wall
+		Rigidbody.linearVelocity = new Vector3(jumpAwayDirection * WallJumpForce.x, WallJumpForce.y, 0f);
+			
+		StartWallJumpInputLock();
+	}
+	
 	
 	// ---- Death & Respawn ----
 
@@ -330,8 +476,15 @@ public class PlayerController : MonoBehaviour
 	// ---- Gizmos & Debug ----
 
 
+	private void HandleNoClipMovement()
+	{
+		transform.position += new Vector3(Input.Move.x / 2f, Input.Move.y / 2f, 0f);
+	}
+
+
 	private void OnDrawGizmosSelected()
 	{
+		// Slide checks
 		if (capsuleCollider == null) capsuleCollider = GetComponent<CapsuleCollider>();
 		if (capsuleCollider == null) return;
 
@@ -347,5 +500,15 @@ public class PlayerController : MonoBehaviour
 		Gizmos.DrawWireSphere(bottomSphere, checkRadius);
 		Gizmos.DrawWireSphere(topSphere, checkRadius);
 		Gizmos.DrawLine(bottomSphere, topSphere);
+		
+		
+		// Wall check for cling
+		Vector3 direction = Vector3.right * FacingDirection;
+		Vector3 upperOrigin = transform.position + Vector3.up * wallCheckUpperHeight;
+		Vector3 lowerOrigin = transform.position + Vector3.up * wallCheckLowerHeight;
+
+		Gizmos.color = Application.isPlaying && IsTouchingWall() ? Color.cyan : Color.yellow;
+		Gizmos.DrawLine(upperOrigin, upperOrigin + direction * wallCheckDistance);
+		Gizmos.DrawLine(lowerOrigin, lowerOrigin + direction * wallCheckDistance);
 	}
 }

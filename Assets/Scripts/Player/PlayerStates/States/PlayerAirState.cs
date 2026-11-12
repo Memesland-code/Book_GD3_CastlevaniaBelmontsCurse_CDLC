@@ -1,3 +1,5 @@
+using UnityEngine;
+
 public class PlayerAirState : PlayerState
 {
 	public PlayerAirState(PlayerController player, PlayerStateMachine stateMachine) : base(player, stateMachine) { }
@@ -11,9 +13,18 @@ public class PlayerAirState : PlayerState
 
 	public override void HandleInput()
 	{
-		if (player.Input.JumpPressedThisFrame && player.CanJump)
+		if (player.Input.JumpPressedThisFrame)
 		{
-			player.ExecuteJump();
+			if (player.CanWallCoyoteJump)
+			{
+				player.PerformWallJump(player.LastWallDirection);
+				return;
+			}
+
+			if (player.CanJump)
+			{
+				player.ExecuteJump();
+			}
 		}
 	}
 
@@ -27,27 +38,47 @@ public class PlayerAirState : PlayerState
 			return;
 		}
 		
+		// Wall slide check
+		if (player.Rigidbody.linearVelocity.y <= player.MaxWallGrabUpwardVelocity && player.CanGrabWall && player.IsTouchingWall())
+		{
+			stateMachine.ChangeState(player.WallState);
+			return;
+		}
+		
 		// Back to ground
 		if (player.IsGrounded && player.Rigidbody.linearVelocity.y <= 0.1f)
 		{
 			stateMachine.ChangeState(player.GroundedState);
 			return;
 		}
-
-		player.ApplyHorizontalMovement(player.AirSpeed);
-		player.UpdateFacingDirection();
+		
+		player.SetFacingDirection();
 	}
 
 
 	public override void PhysicsUpdate()
 	{
-		float activeGravityScale = player.GravityScale;
+		if (!player.IsWallJumpInputLocked)
+		{
+			player.ApplyAirHorizontalMovement(player.AirSpeed);
+		}
+		
+		float activeGravityScale;
 
-		if (player.Rigidbody.linearVelocity.y > 0f && !player.Input.IsJumpHeld)
+		if (player.Rigidbody.linearVelocity.y <= 0f)
+		{
+			activeGravityScale = player.FallGravityScale;
+		}
+		else if (!player.Input.IsJumpHeld)
 		{
 			activeGravityScale = player.LowJumpGravityScale;
 		}
+		else
+		{
+			activeGravityScale = player.GravityScale;
+		}
 
 		player.ApplyGravityForce(activeGravityScale);
+		player.ClampMaxFallSpeed();
 	}
 }

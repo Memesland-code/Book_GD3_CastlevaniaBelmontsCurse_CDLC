@@ -45,6 +45,6 @@ public class PlayerGroundedState : PlayerState
 	    }
 
 	    player.ApplyHorizontalMovement(player.GroundSpeed);
-	    player.UpdateFacingDirection();
+	    player.SetFacingDirection();
     }
 }

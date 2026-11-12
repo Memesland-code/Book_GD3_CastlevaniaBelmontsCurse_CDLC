@@ -258,10 +258,13 @@ MonoBehaviour:
   groundSpeed: 7.5
   airSpeed: 8.5
   upForce: 4
-  lowJumpGravityScale: 4.5
-  gravityScale: 2
-  fastFallingFactor: 1.05
   maxAirJumpsNumber: 0
+  lowJumpGravityScale: 4.5
+  gravityScale: 2.5
+  fallGravityScale: 8
+  maxFallSpeed: 18
+  airAcceleration: 45
+  airDeceleration: 20
   groundMaterial: {fileID: 13400000, guid: e279ffea49e38144680ac07086337245, type: 2}
   airMaterial: {fileID: 13400000, guid: 10ede9b8ccc6d07498c2468ded23156e, type: 2}
   slideSpeed: 14
@@ -270,6 +273,19 @@ MonoBehaviour:
   slideConstantRatio: 0.4
   slidingHeight: 1
   ceilingObstacleLayers:
+    serializedVersion: 2
+    m_Bits: 1
+  wallClingDuration: 1
+  initialWallSlideSpeed: 4
+  wallSlideAcceleration: 10
+  maxWallSlideSpeed: 12
+  wallJumpForce: {x: 10, y: 14}
+  wallJumpInputLockDuration: 0.14
+  wallGrabCooldownDuration: 0.15
+  wallCheckDistance: 0.6
+  wallCheckUpperHeight: 1.6
+  wallCheckLowerHeight: 0.5
+  wallLayers:
     serializedVersion: 2
     m_Bits: 1
   noClip: 0
