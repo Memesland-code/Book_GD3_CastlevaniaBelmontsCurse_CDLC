@@ -5,6 +5,7 @@ using UnityEngine;
 [RequireComponent(typeof(CapsuleCollider))]
 [RequireComponent(typeof(InputManager))]
 [RequireComponent(typeof(LedgeGrab))]
+[RequireComponent(typeof(SafePositionTracker))]
 public class PlayerController : MonoBehaviour
 {
 	[Header("Movement Settings")]
@@ -34,6 +35,7 @@ public class PlayerController : MonoBehaviour
 	public InputManager Input { get; private set; }
 	public Rigidbody Rigidbody { get; private set; }
 	public LedgeGrab LedgeDetector { get; private set; }
+	public SafePositionTracker SafeTracker { get; private set; }
 
 	// Jump Settings
 	public float GroundSpeed => groundSpeed;
@@ -55,6 +57,7 @@ public class PlayerController : MonoBehaviour
 	public PlayerAirState AirState { get; private set; }
 	public PlayerLedgeHangingState LedgeHangingState { get; private set; }
 	public PlayerLedgeClimbingState LedgeClimbingState { get; private set; }
+	public PlayerRespawnState RespawnState { get; private set; }
 	
 	
 	//* General
@@ -73,6 +76,8 @@ public class PlayerController : MonoBehaviour
 		Rigidbody = GetComponent<Rigidbody>();
 		Input = GetComponent<InputManager>();
 		LedgeDetector = GetComponent<LedgeGrab>();
+		SafeTracker = GetComponent<SafePositionTracker>();
+		
 		capsuleCollider = GetComponent<CapsuleCollider>();
 		groundDetector = GetComponentInChildren<GroundDetector>();
 		originalConstraints = Rigidbody.constraints;
@@ -86,6 +91,7 @@ public class PlayerController : MonoBehaviour
 		AirState = new PlayerAirState(this, StateMachine);
 		LedgeHangingState = new PlayerLedgeHangingState(this, StateMachine);
 		LedgeClimbingState = new PlayerLedgeClimbingState(this, StateMachine);
+		RespawnState = new PlayerRespawnState(this, StateMachine, 0.25f);
 	}
 
 	
@@ -226,5 +232,14 @@ public class PlayerController : MonoBehaviour
 		hangPosition.y -= (LedgeDetector.LedgeCheckOrigin.position.y - transform.position.y);
 		transform.position = hangPosition;
 		transform.rotation = Quaternion.LookRotation(-LedgeDetector.CurrentWallHit.normal);
+	}
+
+
+
+	public void TriggerTrapRespawn()
+	{
+		if (StateMachine.CurrentState == RespawnState) return;
+		
+		StateMachine.ChangeState(RespawnState);
 	}
 }

@@ -24,6 +24,11 @@ public class PlayerGroundedState : PlayerState
 
     public override void LogicUpdate()
     {
+	    if (player.SafeTracker != null)
+	    {
+		    player.SafeTracker.TickTracker();
+	    }
+	    
 	    if (!player.IsGrounded)
 	    {
 		    stateMachine.ChangeState(player.AirState);
