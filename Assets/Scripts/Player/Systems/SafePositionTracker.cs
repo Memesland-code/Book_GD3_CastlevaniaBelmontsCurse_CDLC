@@ -73,7 +73,7 @@ public class SafePositionTracker : MonoBehaviour
 	    // Case 1 - 2 rays hit -> player is in the middle of the platform
 	    if (leftSafe && rightSafe)
 	    {
-		    LastSafePosition = GetPivotPositionFromGround(centerHit.point);
+		    LastSafePosition = centerHit.point;
 		    HasValidSafePosition = true;
 		    return;
 	    }
@@ -82,8 +82,8 @@ public class SafePositionTracker : MonoBehaviour
 	    if (leftSafe)
 	    {
 		    LastSafePosition = IsPathClear(centerOrigin, Vector3.left, sideCheckOffset)
-			    ? GetPivotPositionFromGround(leftHit.point)
-			    : GetPivotPositionFromGround(centerHit.point);
+			    ? leftHit.point
+			    : centerHit.point;
 		    HasValidSafePosition = true;
 		    return;
 	    }
@@ -91,22 +91,15 @@ public class SafePositionTracker : MonoBehaviour
 	    if (rightSafe)
 	    {
 		    LastSafePosition = IsPathClear(centerOrigin, Vector3.right, sideCheckOffset)
-			    ? GetPivotPositionFromGround(rightHit.point)
-			    : GetPivotPositionFromGround(centerHit.point);
+			    ? rightHit.point
+			    : centerHit.point;
 		    HasValidSafePosition = true;
 		    return;
 	    }
 	    
 	    // Case 3 - no ray hit -> small platform, keep center point
-	    LastSafePosition = GetPivotPositionFromGround(centerHit.point);
+	    LastSafePosition = centerHit.point;
 	    HasValidSafePosition = true;
-    }
-
-
-
-    private Vector3 GetPivotPositionFromGround(Vector3 groundPoint)
-    {
-	    return groundPoint + Vector3.up * pivotToFeetOffset;
     }
 
 

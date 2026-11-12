@@ -11,7 +11,7 @@ public class GroundDetector : MonoBehaviour
 		touched = Physics.Raycast(transform.position + new Vector3(0, 1, 0), Vector3.down, distance + 1);
 	}
 
-	private void OnDrawGizmos()
+	private void OnDrawGizmosSelected()
 	{
 		Gizmos.color = touched ? Color.green : Color.yellow;
 		Gizmos.DrawRay(transform.position, Vector3.down * distance);

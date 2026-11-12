@@ -5,9 +5,9 @@ public class PlayerRespawnState : PlayerState
 	private float respawnTimer;
 	private readonly float respawnDuration;
 	
-	public PlayerRespawnState(PlayerController player, PlayerStateMachine stateMachine, float respawnTimer, float duration = 0.25f) : base(player, stateMachine)
+	public PlayerRespawnState(PlayerController player, PlayerStateMachine stateMachine, float duration = 0.25f) : base(player, stateMachine)
 	{
-		respawnTimer = duration;
+		respawnDuration = duration;
 	}
 
 
