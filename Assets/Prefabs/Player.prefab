@@ -264,6 +264,14 @@ MonoBehaviour:
   maxAirJumpsNumber: 0
   groundMaterial: {fileID: 13400000, guid: e279ffea49e38144680ac07086337245, type: 2}
   airMaterial: {fileID: 13400000, guid: 10ede9b8ccc6d07498c2468ded23156e, type: 2}
+  slideSpeed: 14
+  slideEndSpeed: 8.5
+  slideDuration: 0.35
+  slideConstantRatio: 0.4
+  slidingHeight: 1
+  ceilingObstacleLayers:
+    serializedVersion: 2
+    m_Bits: 1
   noClip: 0
 --- !u!114 &4960311334494505207
 MonoBehaviour:

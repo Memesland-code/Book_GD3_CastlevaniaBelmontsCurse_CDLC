@@ -12,6 +12,7 @@ public class PlayerController : MonoBehaviour
 	[SerializeField] private float groundSpeed = 7.5f;
 	[SerializeField] private float airSpeed = 8.5f;
 	
+	
 	[Space(10), Header("Jump Settings")]
 	[SerializeField] private float upForce = 2.5f;
 	[SerializeField] private float lowJumpGravityScale = 4.5f;
@@ -19,9 +20,32 @@ public class PlayerController : MonoBehaviour
 	[SerializeField] private float fastFallingFactor = 1.0f;
 	[SerializeField] private int maxAirJumpsNumber;
 	
+	
 	[Space(10), Header("Physic Materials")]
 	[SerializeField] private PhysicsMaterial groundMaterial;
 	[SerializeField] private PhysicsMaterial airMaterial;
+	
+	
+	[Space(10), Header("Slide Settings")]
+	[Tooltip("Constant speed at start (m/s)")]
+	[SerializeField] private float slideSpeed = 14f;
+	
+	[Tooltip("Lowest speed at very end of slide (m/s)")]
+	[SerializeField] private float slideEndSpeed = 3f;
+	
+	[Tooltip("Total duration of basic slide without tunnel (s)")]
+	[SerializeField] private float slideDuration = 0.45f;
+	
+	[Tooltip("Proportion of full speed during slide (%/100)")]
+	[Range(0.1f, 1f)]
+	[SerializeField] private float slideConstantRatio = 0.8f;
+	
+	
+	[Header("Hitbox & Ceiling Detection")]
+	[SerializeField] private float slidingHeight = 1.05f;
+	[Tooltip("Layer of solid walls and ceilings")]
+	[SerializeField] private LayerMask ceilingObstacleLayers;
+	
 	
 	
 	//* Internal Components
@@ -29,6 +53,7 @@ public class PlayerController : MonoBehaviour
 	private GroundDetector groundDetector;
 	private CapsuleCollider capsuleCollider;
 	private RigidbodyConstraints originalConstraints;
+	
 	
 	
 	//* Public Getters for PlayerState
@@ -46,27 +71,37 @@ public class PlayerController : MonoBehaviour
 	public float LowJumpGravityScale => lowJumpGravityScale;
 	public float GravityScale => gravityScale;
 	
+	// Sliding
+	public float SlideSpeed => slideSpeed;
+	public float SlideEndSpeed => slideEndSpeed;
+	public float SlideDuration => slideDuration;
+	public float SlideConstantRatio => slideConstantRatio;
+
 	// Other
 	public bool IsGrounded => groundDetector != null && groundDetector.touched;
 	public RigidbodyConstraints OriginalConstraints => originalConstraints;
 
+	
 
-	//* State Machine & states instances
+	//* State Machine & states instances (FSM)
 	public PlayerStateMachine StateMachine { get; private set; }
 	public PlayerGroundedState GroundedState { get; private set; }
 	public PlayerAirState AirState { get; private set; }
 	public PlayerLedgeHangingState LedgeHangingState { get; private set; }
 	public PlayerLedgeClimbingState LedgeClimbingState { get; private set; }
 	public PlayerRespawnState RespawnState { get; private set; }
+	public PlayerSlideState SlideState { get; private set; }
+	
 	
 	
 	//* General
 	private int currentJumpsCombo;
 	private bool isFacingRight = true;
+	private float standingHeight;
 	
 	
 	
-	[Space(20), Header("Cheat Codes")]
+	[Space(20), Header("Cheats")]
 	public bool noClip;
 
 	
@@ -91,7 +126,10 @@ public class PlayerController : MonoBehaviour
 		AirState = new PlayerAirState(this, StateMachine);
 		LedgeHangingState = new PlayerLedgeHangingState(this, StateMachine);
 		LedgeClimbingState = new PlayerLedgeClimbingState(this, StateMachine);
-		RespawnState = new PlayerRespawnState(this, StateMachine, 0.25f);
+		RespawnState = new PlayerRespawnState(this, StateMachine);
+		SlideState = new PlayerSlideState(this, StateMachine);
+
+		standingHeight = capsuleCollider.height;
 	}
 
 	
@@ -123,8 +161,11 @@ public class PlayerController : MonoBehaviour
 	
 	
 	
-	// ---- State machine functions ----
+	//* ###### State machine functions ######
 	
+	
+	
+	// ---- Basic movements ----
 	
 	
 	public void ApplyHorizontalMovement(float speed)
@@ -138,7 +179,7 @@ public class PlayerController : MonoBehaviour
         
 		realGravity = Mathf.Max(realGravity, -15f);
 
-		Vector3 horizontalMove = new Vector3(Input.Move.x * speed, 0f, 0f);
+		Vector3 horizontalMove = new(Input.Move.x * speed, 0f, 0f);
 
 		if (noClip)
 		{
@@ -206,7 +247,47 @@ public class PlayerController : MonoBehaviour
 	{
 		capsuleCollider.sharedMaterial = isGrounded ? groundMaterial : airMaterial;
 	}
+	
+	
+	// ---- Sliding ----
 
+
+	public void SetSlideHitbox(bool isSliding)
+	{
+		float minAllowedHeight = capsuleCollider.radius * 2f;
+		float targetHeight = isSliding
+			? Mathf.Max(slidingHeight, minAllowedHeight)
+			: Mathf.Max(standingHeight, minAllowedHeight);
+		
+		capsuleCollider.height = targetHeight;
+		capsuleCollider.center = new Vector3(0f, targetHeight * 0.5f, 0f);
+	}
+
+
+
+	public bool CanStandUp()
+	{
+		// Error margin to avoid detecting a wall
+		float checkRadius = capsuleCollider.radius * 0.85f;
+		float minAllowedHeight = capsuleCollider.radius * 2f;
+		float effectiveSlideHeight = Mathf.Max(slidingHeight, minAllowedHeight);
+		
+		Vector3 bottomSphere = transform.position + Vector3.up * effectiveSlideHeight;
+		Vector3 topSphere = transform.position + Vector3.up * (standingHeight - checkRadius);
+		
+		if (topSphere.y < bottomSphere.y) topSphere = bottomSphere;
+
+		return !Physics.CheckCapsule(
+			bottomSphere,
+			topSphere,
+			checkRadius,
+			ceilingObstacleLayers,
+			QueryTriggerInteraction.Ignore
+		);
+	}
+	
+	
+	// ---- Ledge & Climbing ----
 	
 	
 	public void FreezePhysicsForLedge()
@@ -234,6 +315,8 @@ public class PlayerController : MonoBehaviour
 		transform.rotation = Quaternion.LookRotation(-LedgeDetector.CurrentWallHit.normal);
 	}
 
+	
+	// ---- Death & Respawn ----
 
 
 	public void TriggerTrapRespawn()
@@ -241,5 +324,28 @@ public class PlayerController : MonoBehaviour
 		if (StateMachine.CurrentState == RespawnState) return;
 		
 		StateMachine.ChangeState(RespawnState);
+	}
+	
+	
+	// ---- Gizmos & Debug ----
+
+
+	private void OnDrawGizmosSelected()
+	{
+		if (capsuleCollider == null) capsuleCollider = GetComponent<CapsuleCollider>();
+		if (capsuleCollider == null) return;
+
+		float checkRadius = capsuleCollider.radius * 0.85f;
+		float minAllowedHeight = capsuleCollider.radius * 2f;
+		float effectiveSlideHeight = Mathf.Max(slidingHeight, minAllowedHeight);
+
+		Vector3 bottomSphere = transform.position + Vector3.up * effectiveSlideHeight;
+		Vector3 topSphere = transform.position + Vector3.up * (standingHeight - checkRadius);
+		if (topSphere.y < bottomSphere.y) topSphere = bottomSphere;
+
+		Gizmos.color = Application.isPlaying && !CanStandUp() ? Color.red : Color.green;
+		Gizmos.DrawWireSphere(bottomSphere, checkRadius);
+		Gizmos.DrawWireSphere(topSphere, checkRadius);
+		Gizmos.DrawLine(bottomSphere, topSphere);
 	}
 }

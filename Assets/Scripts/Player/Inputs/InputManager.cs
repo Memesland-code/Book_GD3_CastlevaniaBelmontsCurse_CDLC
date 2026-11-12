@@ -1,4 +1,3 @@
-using System;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -9,6 +8,9 @@ public class InputManager : MonoBehaviour, PlayerInputActions.IPlayerActions
     public Vector2 Move { get; private set; }
 	public bool IsJumpHeld { get; private set; }
 	public bool JumpPressedThisFrame { get; private set; }
+	public bool SlidePressedThisFrame { get; private set; }
+
+	public bool SlideJumpCancelAllowed => true;
 
 	private void Awake()
 	{
@@ -29,6 +31,7 @@ public class InputManager : MonoBehaviour, PlayerInputActions.IPlayerActions
 	private void LateUpdate()
 	{
 		JumpPressedThisFrame = false; // Consume jump action at end of frame
+		SlidePressedThisFrame = false;
 	}
 	
 	
@@ -65,6 +68,14 @@ public class InputManager : MonoBehaviour, PlayerInputActions.IPlayerActions
 		else if (context.canceled)
 		{
 			IsJumpHeld = false;
+		}
+	}
+	
+	public void OnSlide(InputAction.CallbackContext context)
+	{
+		if (context.started)
+		{
+			SlidePressedThisFrame = true;
 		}
 	}
 }
