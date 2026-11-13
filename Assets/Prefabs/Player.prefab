@@ -157,6 +157,7 @@ GameObject:
   - component: {fileID: 4846195465360453638}
   - component: {fileID: 4960311334494505207}
   - component: {fileID: 8196581557587832385}
+  - component: {fileID: 7657737939199034235}
   m_Layer: 3
   m_Name: Player
   m_TagString: Player
@@ -259,6 +260,7 @@ MonoBehaviour:
   airSpeed: 8.5
   upForce: 4
   maxAirJumpsNumber: 0
+  airCoyoteDuration: 0.14
   lowJumpGravityScale: 4.5
   gravityScale: 2.5
   fallGravityScale: 8
@@ -267,20 +269,11 @@ MonoBehaviour:
   airDeceleration: 20
   groundMaterial: {fileID: 13400000, guid: e279ffea49e38144680ac07086337245, type: 2}
   airMaterial: {fileID: 13400000, guid: 10ede9b8ccc6d07498c2468ded23156e, type: 2}
-  slideSpeed: 14
-  slideEndSpeed: 8.5
-  slideDuration: 0.35
-  slideConstantRatio: 0.4
-  slidingHeight: 1
-  ceilingObstacleLayers:
-    serializedVersion: 2
-    m_Bits: 1
   maxWallGrabUpwardVelocity: 2.5
   wallClingDuration: 1
   initialWallSlideSpeed: 4
   wallSlideAcceleration: 10
   maxWallSlideSpeed: 12
-  wallCoyoteDuration: 0.14
   wallJumpForce: {x: 10, y: 16.5}
   wallJumpInputLockDuration: 0.14
   wallGrabCooldownDuration: 0.15
@@ -294,7 +287,7 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 256
   gridHangHandHeight: 2.2
-  gridGrabInputLockDuration: 0
+  gridGrabInputLockDuration: 0.05
   gridClimbDuration: 0.1
   gridClimbStepX: 0.1
   gridDropThroughDuration: 0.3
@@ -350,6 +343,26 @@ MonoBehaviour:
   downwardRayDistance: 0.8
   sideCheckOffset: 0.5
   updateInterval: 0.1
+--- !u!114 &7657737939199034235
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5052189306663062249}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ad8835eeeeadfad42b424a53526c2350, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Slide
+  slideSpeed: 14
+  slideEndSpeed: 8.5
+  slideDuration: 0.35
+  slideConstantRatio: 0.4
+  slidingHeight: 1
+  ceilingObstacleLayers:
+    serializedVersion: 2
+    m_Bits: 1
 --- !u!1001 &5861146905059971075
 PrefabInstance:
   m_ObjectHideFlags: 0

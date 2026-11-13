@@ -19,7 +19,7 @@ public class PlayerSlideState : PlayerState
             ? Mathf.Sign(inputX)
             : Mathf.Sign(player.transform.right.x);
         
-        player.SetSlideHitbox(isSliding: true);
+        player.Slide.SetSlideHitbox(isSliding: true);
     }
 
 
@@ -27,7 +27,7 @@ public class PlayerSlideState : PlayerState
     public override void HandleInput()
     {
         // Jump cancel: allowed only if nothing above blocking player
-        if (player.Input.SlideJumpCancelAllowed && player.Input.JumpPressedThisFrame && player.CanStandUp())
+        if (player.Input.SlideJumpCancelAllowed && player.Input.JumpPressedThisFrame && player.Slide.CanStandUp())
         {
             player.ExecuteJump();
             stateMachine.ChangeState(player.AirState);
@@ -38,16 +38,16 @@ public class PlayerSlideState : PlayerState
     public override void LogicUpdate()
     {
         // If sliding towards void and not blocked by a ceiling -> fall
-        if (!player.IsGrounded && player.CanStandUp())
+        if (!player.IsGrounded && player.Slide.CanStandUp())
         {
             stateMachine.ChangeState(player.AirState);
             return;
         }
 
-        float decelStartTime = player.SlideDuration * player.SlideConstantRatio;
+        float decelStartTime = player.Slide.SlideDuration * player.Slide.SlideConstantRatio;
         
         // Tunnel security: if reaching slowing phase under a ceiling, stop the timer to keep full speed until end of tunnel
-        if (elapsedTime >= decelStartTime && !player.CanStandUp())
+        if (elapsedTime >= decelStartTime && !player.Slide.CanStandUp())
         {
             elapsedTime = decelStartTime;
         }
@@ -56,7 +56,7 @@ public class PlayerSlideState : PlayerState
             elapsedTime += Time.deltaTime;
         }
 
-        if (elapsedTime >= player.SlideDuration)
+        if (elapsedTime >= player.Slide.SlideDuration)
         {
             stateMachine.ChangeState(player.GroundedState);
         }
@@ -66,19 +66,19 @@ public class PlayerSlideState : PlayerState
 
     public override void PhysicsUpdate()
     {
-        float normalizedTime = Mathf.Clamp01(elapsedTime / player.SlideDuration);
+        float normalizedTime = Mathf.Clamp01(elapsedTime / player.Slide.SlideDuration);
         float currentSpeed;
 
-        if (normalizedTime < player.SlideConstantRatio)
+        if (normalizedTime < player.Slide.SlideConstantRatio)
         {
             // Phase 1 (0% -> x%): full slide speed
-            currentSpeed = player.SlideSpeed;
+            currentSpeed = player.Slide.SlideSpeed;
         }
         else
         {
             // Phase 2 (x% -> 100%): linear slowing down
-            float decelProgress = Mathf.InverseLerp(player.SlideConstantRatio, 1f, normalizedTime);
-            currentSpeed = Mathf.Lerp(player.SlideSpeed, player.SlideEndSpeed, decelProgress);
+            float decelProgress = Mathf.InverseLerp(player.Slide.SlideConstantRatio, 1f, normalizedTime);
+            currentSpeed = Mathf.Lerp(player.Slide.SlideSpeed, player.Slide.SlideEndSpeed, decelProgress);
         }
         
         // Force horizontal speed while keeping constant gravity on linearVelocity.y
@@ -88,6 +88,6 @@ public class PlayerSlideState : PlayerState
 
     public override void Exit()
     {
-        player.SetSlideHitbox(isSliding: false);
+        player.Slide.SetSlideHitbox(isSliding: false);
     }
 }

@@ -7,6 +7,7 @@ using UnityEngine;
 [RequireComponent(typeof(InputManager))]
 [RequireComponent(typeof(LedgeGrab))]
 [RequireComponent(typeof(SafePositionTracker))]
+[RequireComponent(typeof(PlayerSlide))]
 public class PlayerController : MonoBehaviour
 {
 	[Header("Movement Settings")]
@@ -33,27 +34,6 @@ public class PlayerController : MonoBehaviour
 	[Space(10), Header("Physic Materials")]
 	[SerializeField] private PhysicsMaterial groundMaterial;
 	[SerializeField] private PhysicsMaterial airMaterial;
-	
-	
-	[Space(10), Header("Slide Settings")]
-	[Tooltip("Constant speed at start (m/s)")]
-	[SerializeField] private float slideSpeed = 14f;
-	
-	[Tooltip("Lowest speed at very end of slide (m/s)")]
-	[SerializeField] private float slideEndSpeed = 8.5f;
-	
-	[Tooltip("Total duration of basic slide without tunnel (s)")]
-	[SerializeField] private float slideDuration = 0.35f;
-	
-	[Tooltip("Proportion of full speed during slide (%/100)")]
-	[Range(0.1f, 1f)]
-	[SerializeField] private float slideConstantRatio = 0.4f;
-	
-	
-	[Header("Hitbox & Ceiling Detection")]
-	[SerializeField] private float slidingHeight = 1f;
-	[Tooltip("Layer of solid walls and ceilings")]
-	[SerializeField] private LayerMask ceilingObstacleLayers;
 	
 	
 	[Space(10), Header("Wall Cling & Slide")]
@@ -116,32 +96,28 @@ public class PlayerController : MonoBehaviour
 	//* Internal Components
 	private CinemachineCamera camera;
 	private GroundDetector groundDetector;
-	private CapsuleCollider capsuleCollider;
+	public CapsuleCollider CapsuleCollider { get; private set; }
 	private RigidbodyConstraints originalConstraints;
 	
 	
 	
-	//* Public Getters for PlayerState
+	//* Variables Getters for PlayerState
 	public InputManager Input { get; private set; }
 	public Rigidbody Rigidbody { get; private set; }
 	public LedgeGrab LedgeDetector { get; private set; }
 	public SafePositionTracker SafeTracker { get; private set; }
+	public PlayerSlide Slide { get; private set; }
 
 	// Jump Settings
 	public float GroundSpeed => groundSpeed;
 	public float AirSpeed => airSpeed;
+	private int currentJumpsCombo;
 	public bool CanJump => currentJumpsCombo < maxAirJumpsNumber;
 
 	// Gravity Related
 	public float GravityScale => gravityScale;
 	public float FallGravityScale => fallGravityScale;
 	public float LowJumpGravityScale => lowJumpGravityScale;
-	
-	// Sliding
-	public float SlideSpeed => slideSpeed;
-	public float SlideEndSpeed => slideEndSpeed;
-	public float SlideDuration => slideDuration;
-	public float SlideConstantRatio => slideConstantRatio;
 	
 	// Wall Cling
 	public float MaxWallGrabUpwardVelocity => maxWallGrabUpwardVelocity;
@@ -150,7 +126,9 @@ public class PlayerController : MonoBehaviour
 	public float WallSlideAcceleration => wallSlideAcceleration;
 	public float MaxWallSlideSpeed => maxWallSlideSpeed;
 	public Vector2 WallJumpForce => wallJumpForce;
+	private float airCoyoteTimer;
 	public bool CanWallCoyoteJump => airCoyoteTimer > 0f;
+	private int lastWallDirection;
 	public int LastWallDirection => lastWallDirection;
 	
 	// Grid platform
@@ -158,19 +136,32 @@ public class PlayerController : MonoBehaviour
 	public float GridGrabInputLockDuration => gridGrabInputLockDuration;
 	public float GridClimbDuration => gridClimbDuration;
 	public float GridClimbStepX => gridClimbStepX;
+	private float gridDropThroughTimer;
 	public bool CanGrabGrid => gridDropThroughTimer <= 0f;
 
-	// Other
+	//* General
 	public bool IsGrounded => groundDetector != null && groundDetector.touched;
-	public RigidbodyConstraints OriginalConstraints => originalConstraints;
+	
 	public bool CanGrabWall => wallGrabCooldownTimer <= 0f;
+	
 	public bool IsWallJumpInputLocked => wallJumpInputLockTimer > 0f;
+	
 	public bool IsFacingRight => isFacingRight;
-	public int FacingDirection => IsFacingRight ? 1 : -1;
+	
+	private float jumpGraceTimer;
 	public bool IsJumpGraceActive => jumpGraceTimer > 0f;
+	
+	private bool isFacingRight = true;
+	public int FacingDirection => IsFacingRight ? 1 : -1;
+	
+	private float standingHeight;
+	public float StandingHeight => standingHeight;
 
+	private GridPlatform ignoredGridPlatform;
+	private readonly Collider[] nearbyGridBuffer = new Collider[8];
 	
 
+	
 	//* State Machine & states instances (FSM)
 	public PlayerStateMachine StateMachine { get; private set; }
 	public PlayerGroundedState GroundedState { get; private set; }
@@ -183,18 +174,6 @@ public class PlayerController : MonoBehaviour
 	public PlayerGridHangingState GridHangingState { get; private set; }
 	
 	
-	
-	//* General
-	private bool isFacingRight = true;
-	private int currentJumpsCombo;
-	private float standingHeight;
-	private float airCoyoteTimer;
-	private int lastWallDirection;
-	private float jumpGraceTimer;
-	
-	private GridPlatform ignoredGridPlatform;
-	private float gridDropThroughTimer;
-	private readonly Collider[] nearbyGridBuffer = new Collider[8];
 	
 	// Internal timers
 	private float wallGrabCooldownTimer;
@@ -218,8 +197,9 @@ public class PlayerController : MonoBehaviour
 		Input = GetComponent<InputManager>();
 		LedgeDetector = GetComponent<LedgeGrab>();
 		SafeTracker = GetComponent<SafePositionTracker>();
+		Slide = GetComponent<PlayerSlide>();
 		
-		capsuleCollider = GetComponent<CapsuleCollider>();
+		CapsuleCollider = GetComponent<CapsuleCollider>();
 		groundDetector = GetComponentInChildren<GroundDetector>();
 		originalConstraints = Rigidbody.constraints;
 
@@ -237,7 +217,7 @@ public class PlayerController : MonoBehaviour
 		WallState = new PlayerWallState(this, StateMachine);
 		GridHangingState = new PlayerGridHangingState(this, StateMachine);
 
-		standingHeight = capsuleCollider.height;
+		standingHeight = CapsuleCollider.height;
 	}
 
 	
@@ -406,45 +386,7 @@ public class PlayerController : MonoBehaviour
 	
 	public void SetPhysicsMaterial(bool isGrounded)
 	{
-		capsuleCollider.sharedMaterial = isGrounded ? groundMaterial : airMaterial;
-	}
-	
-	
-	// ---- Sliding ----
-
-
-	public void SetSlideHitbox(bool isSliding)
-	{
-		float minAllowedHeight = capsuleCollider.radius * 2f;
-		float targetHeight = isSliding
-			? Mathf.Max(slidingHeight, minAllowedHeight)
-			: Mathf.Max(standingHeight, minAllowedHeight);
-		
-		capsuleCollider.height = targetHeight;
-		capsuleCollider.center = new Vector3(0f, targetHeight * 0.5f, 0f);
-	}
-
-
-
-	public bool CanStandUp()
-	{
-		// Error margin to avoid detecting a wall
-		float checkRadius = capsuleCollider.radius * 0.85f;
-		float minAllowedHeight = capsuleCollider.radius * 2f;
-		float effectiveSlideHeight = Mathf.Max(slidingHeight, minAllowedHeight);
-		
-		Vector3 bottomSphere = transform.position + Vector3.up * effectiveSlideHeight;
-		Vector3 topSphere = transform.position + Vector3.up * (standingHeight - checkRadius);
-		
-		if (topSphere.y < bottomSphere.y) topSphere = bottomSphere;
-
-		return !Physics.CheckCapsule(
-			bottomSphere,
-			topSphere,
-			checkRadius,
-			ceilingObstacleLayers,
-			QueryTriggerInteraction.Ignore
-		);
+		CapsuleCollider.sharedMaterial = isGrounded ? groundMaterial : airMaterial;
 	}
 	
 	
@@ -535,7 +477,7 @@ public class PlayerController : MonoBehaviour
 	/// </summary>
 	private void UpdateGridPlatformCollisions()
 	{
-		if (capsuleCollider == null) return;
+		if (CapsuleCollider == null) return;
 		
 		// Check for full character surface
 		Vector3 boxCenter = transform.position + Vector3.up * (standingHeight * 0.5f);
@@ -553,7 +495,7 @@ public class PlayerController : MonoBehaviour
 			bool feetAboveSurface = transform.position.y >= (platform.TopSurfaceY - 0.08f);
 
 			bool shouldIgnoreCollision = isExplicitlyIgnored || isHangingOnThis || !feetAboveSurface;
-			Physics.IgnoreCollision(capsuleCollider, platform.PlatformCollider, shouldIgnoreCollision);
+			Physics.IgnoreCollision(CapsuleCollider, platform.PlatformCollider, shouldIgnoreCollision);
 		}
 	}
 
@@ -567,7 +509,7 @@ public class PlayerController : MonoBehaviour
 		if (!CanGrabGrid) return false;
 		
 		Vector3 grabCenter = transform.position + Vector3.up * gridHangHandHeight;
-		Vector3 grabHalfExtents = new Vector3(capsuleCollider.radius * 0.8f, 0.2f, 0.5f);
+		Vector3 grabHalfExtents = new Vector3(CapsuleCollider.radius * 0.8f, 0.2f, 0.5f);
 		
 		int hitCount = Physics.OverlapBoxNonAlloc(grabCenter, grabHalfExtents, nearbyGridBuffer, Quaternion.identity, gridPlatformLayer, QueryTriggerInteraction.Ignore);
 
@@ -611,7 +553,7 @@ public class PlayerController : MonoBehaviour
 		
 		ignoredGridPlatform = platform;
 		gridDropThroughTimer = gridDropThroughDuration;
-		Physics.IgnoreCollision(capsuleCollider, platform.PlatformCollider, true);
+		Physics.IgnoreCollision(CapsuleCollider, platform.PlatformCollider, true);
 
 		if (CurrentGridPlatform == platform)
 		{
@@ -648,7 +590,7 @@ public class PlayerController : MonoBehaviour
 	{
 		if (CurrentGridPlatform != null)
 		{
-			Physics.IgnoreCollision(capsuleCollider, CurrentGridPlatform.PlatformCollider, false);
+			Physics.IgnoreCollision(CapsuleCollider, CurrentGridPlatform.PlatformCollider, false);
 			CurrentGridPlatform = null;
 		}
 		
@@ -684,39 +626,46 @@ public class PlayerController : MonoBehaviour
 	private void OnDrawGizmosSelected()
 	{
 		// Slide checks
-		if (capsuleCollider == null) capsuleCollider = GetComponent<CapsuleCollider>();
-		if (capsuleCollider == null) return;
+		if (CapsuleCollider == null) CapsuleCollider = GetComponent<CapsuleCollider>();
+		if (Slide == null) Slide = GetComponent<PlayerSlide>();
+		if (CapsuleCollider != null && Slide != null)
+		{
+			if (CapsuleCollider == null) return;
 
-		float checkRadius = capsuleCollider.radius * 0.85f;
-		float minAllowedHeight = capsuleCollider.radius * 2f;
-		float effectiveSlideHeight = Mathf.Max(slidingHeight, minAllowedHeight);
+			float checkRadius = CapsuleCollider.radius * 0.85f;
+			float minAllowedHeight = CapsuleCollider.radius * 2f;
+			float effectiveSlideHeight = Mathf.Max(Slide.SlidingHeight, minAllowedHeight);
 
-		Vector3 bottomSphere = transform.position + Vector3.up * effectiveSlideHeight;
-		Vector3 topSphere = transform.position + Vector3.up * (standingHeight - checkRadius);
-		if (topSphere.y < bottomSphere.y) topSphere = bottomSphere;
+			Vector3 bottomSphere = transform.position + Vector3.up * effectiveSlideHeight;
+			Vector3 topSphere = transform.position + Vector3.up * (standingHeight - checkRadius);
+			if (topSphere.y < bottomSphere.y) topSphere = bottomSphere;
 
-		Gizmos.color = Application.isPlaying && !CanStandUp() ? Color.red : Color.green;
-		Gizmos.DrawWireSphere(bottomSphere, checkRadius);
-		Gizmos.DrawWireSphere(topSphere, checkRadius);
-		Gizmos.DrawLine(bottomSphere, topSphere);
-		
-		
+			Gizmos.color = Application.isPlaying && !Slide.CanStandUp() ? Color.red : Color.green;
+			Gizmos.DrawWireSphere(bottomSphere, checkRadius);
+			Gizmos.DrawWireSphere(topSphere, checkRadius);
+			Gizmos.DrawLine(bottomSphere, topSphere);
+		}
+
 		// Wall check for cling
-		Vector3 direction = Vector3.right * FacingDirection;
-		Vector3 upperOrigin = transform.position + Vector3.up * wallCheckUpperHeight;
-		Vector3 lowerOrigin = transform.position + Vector3.up * wallCheckLowerHeight;
+		{
+			Vector3 direction = Vector3.right * FacingDirection;
+			Vector3 upperOrigin = transform.position + Vector3.up * wallCheckUpperHeight;
+			Vector3 lowerOrigin = transform.position + Vector3.up * wallCheckLowerHeight;
 
-		Gizmos.color = Application.isPlaying && IsTouchingWall() ? Color.cyan : Color.yellow;
-		Gizmos.DrawLine(upperOrigin, upperOrigin + direction * wallCheckDistance);
-		Gizmos.DrawLine(lowerOrigin, lowerOrigin + direction * wallCheckDistance);
+			Gizmos.color = Application.isPlaying && IsTouchingWall() ? Color.cyan : Color.yellow;
+			Gizmos.DrawLine(upperOrigin, upperOrigin + direction * wallCheckDistance);
+			Gizmos.DrawLine(lowerOrigin, lowerOrigin + direction * wallCheckDistance);
+		}
 		
 		
 		// Grid platform grab check
-		// Grid Platform grab check
-		Vector3 grabCenter = transform.position + Vector3.up * gridHangHandHeight;
-		Vector3 grabSize = new Vector3(capsuleCollider.radius * 1.6f, 0.4f, 1f);
+		if (CapsuleCollider != null)
+		{
+			Vector3 grabCenter = transform.position + Vector3.up * gridHangHandHeight;
+			Vector3 grabSize = new(CapsuleCollider.radius * 1.6f, 0.4f, 1f);
 
-		Gizmos.color = Color.magenta;
-		Gizmos.DrawWireCube(grabCenter, grabSize);
+			Gizmos.color = Color.magenta;
+			Gizmos.DrawWireCube(grabCenter, grabSize);
+		}
 	}
 }
