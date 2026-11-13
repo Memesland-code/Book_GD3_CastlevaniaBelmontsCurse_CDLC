@@ -78,6 +78,7 @@ public class WallInteractionPlayerSystem : MonoBehaviour
 
 	public void PerformWallJump(int wallDir)
 	{
+		player.Animator.SetTrigger(player.animJump);
 		player.ClearAirCoyoteTime();
 		int jumpAwayDirection = -wallDir;
 			

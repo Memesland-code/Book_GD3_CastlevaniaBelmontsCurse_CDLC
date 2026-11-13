@@ -12,6 +12,9 @@ using UnityEngine;
 [RequireComponent(typeof(GridInteractionPlayerSystem))]
 public class PlayerController : MonoBehaviour
 {
+	public readonly int isRunning = Animator.StringToHash("IsRunning");
+	public readonly int animJump = Animator.StringToHash("Jump");
+
 	[Header("Movement Settings")]
 	[SerializeField] private float groundSpeed = 7.5f;
 	[SerializeField] private float airSpeed = 8.5f;
@@ -44,6 +47,7 @@ public class PlayerController : MonoBehaviour
 	private GroundDetectorPlayerSystem groundDetector;
 	public CapsuleCollider CapsuleCollider { get; private set; }
 	private RigidbodyConstraints originalConstraints;
+	public Animator Animator { get; private set; }
 	
 	
 	
@@ -125,6 +129,7 @@ public class PlayerController : MonoBehaviour
 		Slide = GetComponent<SlidePlayerSystem>();
 		WallInteraction = GetComponent<WallInteractionPlayerSystem>();
 		GridInteraction = GetComponent<GridInteractionPlayerSystem>();
+		Animator = GetComponent<Animator>();
 		
 		CapsuleCollider = GetComponent<CapsuleCollider>();
 		groundDetector = GetComponentInChildren<GroundDetectorPlayerSystem>();
@@ -252,6 +257,7 @@ public class PlayerController : MonoBehaviour
 	
 	public void ExecuteJump()
 	{
+		Animator.SetTrigger(animJump);
 		ClearAirCoyoteTime();
 		SetPhysicsMaterial(isGrounded: false);
 		

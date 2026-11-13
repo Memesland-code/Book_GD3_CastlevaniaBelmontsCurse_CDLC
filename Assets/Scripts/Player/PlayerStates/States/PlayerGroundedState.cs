@@ -15,6 +15,18 @@ public class PlayerGroundedState : PlayerState
     
     public override void HandleInput()
     {
+	    if (player.Input.Move.x is < -0.1f or > 0.1f)
+	    {
+		    if (!player.Animator.GetBool(player.isRunning))
+		    {
+				player.Animator.SetBool(player.isRunning, true);
+		    }
+	    }
+	    else
+	    {
+		    player.Animator.SetBool(player.isRunning, false);
+	    }
+	    
 	    // Pass through grid platform
 	    if (player.Input.Move.y < -0.5f && player.Input.JumpPressedThisFrame)
 	    {
@@ -57,8 +69,14 @@ public class PlayerGroundedState : PlayerState
 		    stateMachine.ChangeState(player.AirState);
 		    return;
 	    }
-
+	    
 	    player.ApplyHorizontalMovement(player.GroundSpeed);
 	    player.SetFacingDirection();
+    }
+
+
+    public override void Exit()
+    {
+	    player.Animator.SetBool(player.isRunning, false);
     }
 }
