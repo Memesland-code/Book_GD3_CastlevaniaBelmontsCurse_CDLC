@@ -42,9 +42,9 @@ public class PlayerAirState : PlayerState
 		}
 		
 		// Grid platform check
-		if (player.TryGrabGridPlatform(out GridPlatform gridPlatform))
+		if (player.GridInteraction.TryGrabGridPlatform(out GridPlatform gridPlatform))
 		{
-			player.EnterGridHang(gridPlatform);
+			player.GridInteraction.EnterGridHang(gridPlatform);
 			return;
 		}
 		

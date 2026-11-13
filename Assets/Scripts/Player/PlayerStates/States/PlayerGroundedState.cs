@@ -18,10 +18,10 @@ public class PlayerGroundedState : PlayerState
 	    // Pass through grid platform
 	    if (player.Input.Move.y < -0.5f && player.Input.JumpPressedThisFrame)
 	    {
-		    GridPlatform standingGrid = player.GetStandingGridPlatform();
+		    GridPlatform standingGrid = player.GridInteraction.GetStandingGridPlatform();
 		    if (standingGrid != null)
 		    {
-			    player.StartGridDropThrough(standingGrid);
+			    player.GridInteraction.StartGridDropThrough(standingGrid);
 			    stateMachine.ChangeState(player.AirState);
 			    return;
 		    }

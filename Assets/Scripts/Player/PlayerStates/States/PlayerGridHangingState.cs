@@ -15,10 +15,10 @@ public class PlayerGridHangingState : PlayerState
 	{
 		isClimbing = false;
 		climbTimer = 0f;
-		inputLockTimer = player.GridGrabInputLockDuration;
+		inputLockTimer = player.GridInteraction.GridGrabInputLockDuration;
 		
 		player.FreezePhysicsForLedge();
-		player.AlignToGridPlatform();
+		player.GridInteraction.AlignToGridPlatform();
 	}
 
 
@@ -32,7 +32,7 @@ public class PlayerGridHangingState : PlayerState
 		// Down input -> Let platform go
 		if (inputY < -0.5f)
 		{
-			player.StartGridDropThrough(player.CurrentGridPlatform, isFromAbove: false);
+			player.GridInteraction.StartGridDropThrough(player.GridInteraction.CurrentGridPlatform, isFromAbove: false);
 			stateMachine.ChangeState(player.AirState);
 			return;
 		}
@@ -49,15 +49,13 @@ public class PlayerGridHangingState : PlayerState
 			}
 
 			StartClimb(inputX);
-			//? player.PerformGridClimbing(inputX);
-			//? stateMachine.ChangeState(player.AirState);
 		}
 	}
 
 
 	private void StartClimb(float inputX)
 	{
-		if (player.CurrentGridPlatform == null)
+		if (player.GridInteraction.CurrentGridPlatform == null)
 		{
 			stateMachine.ChangeState(player.AirState);
 			return;
@@ -67,14 +65,14 @@ public class PlayerGridHangingState : PlayerState
 		climbTimer = 0f;
 		climbStartPos = player.transform.position;
 		
-		float stepX = Mathf.Abs(inputX) > 0.1f ? Mathf.Sign(inputX) * player.GridClimbStepX : 0f;
-		climbTargetPos = new Vector3(climbStartPos.x + stepX, player.CurrentGridPlatform.TopSurfaceY + 0.02f, climbStartPos.z);
+		float stepX = Mathf.Abs(inputX) > 0.1f ? Mathf.Sign(inputX) * player.GridInteraction.GridClimbStepX : 0f;
+		climbTargetPos = new Vector3(climbStartPos.x + stepX, player.GridInteraction.CurrentGridPlatform.TopSurfaceY + 0.02f, climbStartPos.z);
 	}
 
 
 	public override void LogicUpdate()
 	{
-		if (player.CurrentGridPlatform == null)
+		if (player.GridInteraction.CurrentGridPlatform == null)
 		{
 			stateMachine.ChangeState(player.AirState);
 			return;
@@ -91,7 +89,7 @@ public class PlayerGridHangingState : PlayerState
 		}
 		
 		climbTimer += Time.deltaTime;
-		float progress = Mathf.Clamp01(climbTimer / player.GridClimbDuration);
+		float progress = Mathf.Clamp01(climbTimer / player.GridInteraction.GridClimbDuration);
 
 		float easedProgress = 1f - Mathf.Pow(1f - progress, 3f);
 		player.transform.position = Vector3.Lerp(climbStartPos, climbTargetPos, easedProgress);
@@ -107,7 +105,7 @@ public class PlayerGridHangingState : PlayerState
 	private void FinishClimb()
 	{
 		player.transform.position = climbTargetPos;
-		player.CompleteGridClimb();
+		player.GridInteraction.CompleteGridClimb();
 		stateMachine.ChangeState(player.GroundedState);
 	}
 	

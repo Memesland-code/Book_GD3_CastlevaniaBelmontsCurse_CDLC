@@ -159,6 +159,7 @@ GameObject:
   - component: {fileID: 8196581557587832385}
   - component: {fileID: 7657737939199034235}
   - component: {fileID: 6898517849132983508}
+  - component: {fileID: 3575180392548224476}
   m_Layer: 3
   m_Name: Player
   m_TagString: Player
@@ -270,15 +271,6 @@ MonoBehaviour:
   airDeceleration: 20
   groundMaterial: {fileID: 13400000, guid: e279ffea49e38144680ac07086337245, type: 2}
   airMaterial: {fileID: 13400000, guid: 10ede9b8ccc6d07498c2468ded23156e, type: 2}
-  gridPlatformLayer:
-    serializedVersion: 2
-    m_Bits: 256
-  gridHangHandHeight: 2.2
-  gridGrabInputLockDuration: 0.05
-  gridClimbDuration: 0.1
-  gridClimbStepX: 0.1
-  gridDropThroughDuration: 0.3
-  gridDropDownSpeed: 25
   noClip: 0
   currentStateName: 
 --- !u!114 &4960311334494505207
@@ -376,6 +368,27 @@ MonoBehaviour:
   wallLayers:
     serializedVersion: 2
     m_Bits: 1
+--- !u!114 &3575180392548224476
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5052189306663062249}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 268605f7ee547054b8b5a8be5806002c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GridInteractionPlayerSystem
+  gridPlatformLayer:
+    serializedVersion: 2
+    m_Bits: 256
+  gridHangHandHeight: 2.2
+  gridGrabInputLockDuration: 0.05
+  gridClimbDuration: 0.1
+  gridClimbStepX: 0.1
+  gridDropThroughDuration: 0.3
+  gridDropDownSpeed: 25
 --- !u!1001 &5861146905059971075
 PrefabInstance:
   m_ObjectHideFlags: 0

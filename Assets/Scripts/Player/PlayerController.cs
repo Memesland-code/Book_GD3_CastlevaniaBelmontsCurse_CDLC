@@ -9,6 +9,7 @@ using UnityEngine;
 [RequireComponent(typeof(SafePositionTrackerPlayerSystem))]
 [RequireComponent(typeof(SlidePlayerSystem))]
 [RequireComponent(typeof(WallInteractionPlayerSystem))]
+[RequireComponent(typeof(GridInteractionPlayerSystem))]
 public class PlayerController : MonoBehaviour
 {
 	[Header("Movement Settings")]
@@ -37,27 +38,6 @@ public class PlayerController : MonoBehaviour
 	[SerializeField] private PhysicsMaterial airMaterial;
 	
 	
-	[Space(10), Header("Grid Platform")]
-	[SerializeField] private LayerMask gridPlatformLayer;
-	[Tooltip("Hands height when suspended")]
-	[SerializeField] private float gridHangHandHeight = 2.2f;
-	
-	[Tooltip("Short delay after grabbing platform (s)")]
-	[SerializeField] private float gridGrabInputLockDuration = 0.1f;
-	
-	[Tooltip("Time to climb up on platform")]
-	[SerializeField] private float gridClimbDuration = 0.14f;
-	
-	[Tooltip("Optionnal x offset when Move.x is pressed while climbing")]
-	[SerializeField] private float gridClimbStepX = 0.35f;
-	
-	[Tooltip("Duration of grid platform to be ignored while passing through")]
-	[SerializeField] private float gridDropThroughDuration = 0.25f;
-	
-	[Tooltip("Downwards impulse to go through grid (m/s)")]
-	[SerializeField] private float gridDropDownSpeed = 8.5f;
-	
-	
 	
 	//* Internal Components
 	private CinemachineCamera camera;
@@ -74,6 +54,7 @@ public class PlayerController : MonoBehaviour
 	public SafePositionTrackerPlayerSystem SafePositionTracker { get; private set; }
 	public SlidePlayerSystem Slide { get; private set; }
 	public WallInteractionPlayerSystem WallInteraction { get; private set; }
+	public GridInteractionPlayerSystem GridInteraction { get; private set; }
 
 	// Jump Settings
 	public float GroundSpeed => groundSpeed;
@@ -88,14 +69,6 @@ public class PlayerController : MonoBehaviour
 	public float FallGravityScale => fallGravityScale;
 	public float LowJumpGravityScale => lowJumpGravityScale;
 	
-	
-	// Grid platform
-	public GridPlatform CurrentGridPlatform { get; private set; }
-	public float GridGrabInputLockDuration => gridGrabInputLockDuration;
-	public float GridClimbDuration => gridClimbDuration;
-	public float GridClimbStepX => gridClimbStepX;
-	private float gridDropThroughTimer;
-	public bool CanGrabGrid => gridDropThroughTimer <= 0f;
 
 	//* General
 	public bool IsGrounded => groundDetector != null && groundDetector.touched;
@@ -117,9 +90,6 @@ public class PlayerController : MonoBehaviour
 	
 	private float standingHeight;
 	public float StandingHeight => standingHeight;
-
-	private GridPlatform ignoredGridPlatform;
-	private readonly Collider[] nearbyGridBuffer = new Collider[8];
 	
 
 	
@@ -154,6 +124,7 @@ public class PlayerController : MonoBehaviour
 		SafePositionTracker = GetComponent<SafePositionTrackerPlayerSystem>();
 		Slide = GetComponent<SlidePlayerSystem>();
 		WallInteraction = GetComponent<WallInteractionPlayerSystem>();
+		GridInteraction = GetComponent<GridInteractionPlayerSystem>();
 		
 		CapsuleCollider = GetComponent<CapsuleCollider>();
 		groundDetector = GetComponentInChildren<GroundDetectorPlayerSystem>();
@@ -209,13 +180,13 @@ public class PlayerController : MonoBehaviour
 		if (airCoyoteTimer > 0f) airCoyoteTimer -= Time.deltaTime;
 		if (jumpGraceTimer > 0f) jumpGraceTimer -= Time.deltaTime;
 		
-		if (gridDropThroughTimer > 0f)
+		if (GridInteraction.GridDropThroughTimer > 0f)
 		{
-			gridDropThroughTimer -= Time.deltaTime;
+			GridInteraction.GridDropThroughTimer -= Time.deltaTime;
 
-			if (gridDropThroughTimer <= 0f)
+			if (GridInteraction.GridDropThroughTimer <= 0f)
 			{
-				ignoredGridPlatform = null;
+				GridInteraction.IgnoredGridPlatform = null;
 			}
 		}
 	}
@@ -224,7 +195,7 @@ public class PlayerController : MonoBehaviour
 	
 	private void FixedUpdate()
 	{
-		UpdateGridPlatformCollisions();
+		GridInteraction.UpdateGridPlatformCollisions();
 		StateMachine.CurrentState.PhysicsUpdate();
 	}
 	
@@ -389,140 +360,6 @@ public class PlayerController : MonoBehaviour
 	}
 	
 	
-	// ---- Grid Platforms ----
-
-
-	/// <summary>
-	/// Enable or disables dynamically the collision with nearby GridPlatforms
-	/// </summary>
-	private void UpdateGridPlatformCollisions()
-	{
-		if (CapsuleCollider == null) return;
-		
-		// Check for full character surface
-		Vector3 boxCenter = transform.position + Vector3.up * (standingHeight * 0.5f);
-		Vector3 boxHalfExtents = new Vector3(1.5f, standingHeight * 0.75f, 1f);
-		
-		int hitCount = Physics.OverlapBoxNonAlloc(boxCenter, boxHalfExtents, nearbyGridBuffer, Quaternion.identity, gridPlatformLayer, QueryTriggerInteraction.Ignore);
-
-		for (int i = 0; i < hitCount; i++)
-		{
-			if (!nearbyGridBuffer[i].TryGetComponent(out GridPlatform platform)) continue;
-
-			bool isExplicitlyIgnored = (platform == ignoredGridPlatform && gridDropThroughTimer > 0f);
-			bool isHangingOnThis = (StateMachine.CurrentState == GridHangingState && platform == CurrentGridPlatform);
-
-			bool feetAboveSurface = transform.position.y >= (platform.TopSurfaceY - 0.08f);
-
-			bool shouldIgnoreCollision = isExplicitlyIgnored || isHangingOnThis || !feetAboveSurface;
-			Physics.IgnoreCollision(CapsuleCollider, platform.PlatformCollider, shouldIgnoreCollision);
-		}
-	}
-
-
-	/// <summary>
-	/// Check while in AirState if character's hands touch a GridPlatform
-	/// </summary>
-	public bool TryGrabGridPlatform(out GridPlatform detectedPlatform)
-	{
-		detectedPlatform = null;
-		if (!CanGrabGrid) return false;
-		
-		Vector3 grabCenter = transform.position + Vector3.up * gridHangHandHeight;
-		Vector3 grabHalfExtents = new Vector3(CapsuleCollider.radius * 0.8f, 0.2f, 0.5f);
-		
-		int hitCount = Physics.OverlapBoxNonAlloc(grabCenter, grabHalfExtents, nearbyGridBuffer, Quaternion.identity, gridPlatformLayer, QueryTriggerInteraction.Ignore);
-
-		for (int i = 0; i < hitCount; i++)
-		{
-			if (!nearbyGridBuffer[i].TryGetComponent(out GridPlatform platform)) continue;
-			if (platform == ignoredGridPlatform && gridDropThroughTimer > 0f) continue;
-			
-			// Security to check that characters is under platform to avoid grabbing from above
-			if (transform.position.y < platform.TopSurfaceY - 0.25f)
-			{
-				detectedPlatform = platform;
-				return true;
-			}
-		}
-
-		return false;
-	}
-
-
-	public void EnterGridHang(GridPlatform platform)
-	{
-		CurrentGridPlatform = platform;
-		StateMachine.ChangeState(GridHangingState);
-	}
-
-
-	public void AlignToGridPlatform()
-	{
-		if (CurrentGridPlatform == null) return;
-
-		Vector3 pos = transform.position;
-		pos.y = CurrentGridPlatform.TopSurfaceY - gridHangHandHeight;
-		transform.position = pos;
-	}
-
-
-	public void StartGridDropThrough(GridPlatform platform, bool isFromAbove = true)
-	{
-		if (platform == null) return;
-		
-		ignoredGridPlatform = platform;
-		gridDropThroughTimer = gridDropThroughDuration;
-		Physics.IgnoreCollision(CapsuleCollider, platform.PlatformCollider, true);
-
-		if (CurrentGridPlatform == platform)
-		{
-			CurrentGridPlatform = null;
-		}
-
-		float downSpeed = isFromAbove ? gridDropDownSpeed : gridDropDownSpeed / 3;
-		
-		if (Rigidbody != null)
-		{
-			UnfreezePhysicsFromLedge();
-			Rigidbody.linearVelocity = new Vector3(Rigidbody.linearVelocity.x, -downSpeed, 0f);
-		}
-	}
-
-
-	/// <summary>
-	/// Detects if character is currently above a GridPlatform
-	/// </summary>
-	public GridPlatform GetStandingGridPlatform()
-	{
-		Vector3 rayOrigin = transform.position + Vector3.up * 0.15f;
-		if (Physics.Raycast(rayOrigin, Vector3.down, out RaycastHit hit, 0.35f, gridPlatformLayer, QueryTriggerInteraction.Ignore))
-		{
-			return hit.collider.GetComponent<GridPlatform>();
-		}
-
-		return null;
-	}
-
-
-
-	public void CompleteGridClimb()
-	{
-		if (CurrentGridPlatform != null)
-		{
-			Physics.IgnoreCollision(CapsuleCollider, CurrentGridPlatform.PlatformCollider, false);
-			CurrentGridPlatform = null;
-		}
-		
-		UnfreezePhysicsFromLedge();
-		Physics.SyncTransforms();
-		
-		// If player holds left/right character start moving right after climbing up
-		float moveX = Input != null ? Input.Move.x : 0f;
-		Rigidbody.linearVelocity = new Vector3(moveX * groundSpeed, 0f, 0f);
-	}
-	
-	
 	// ---- Death & Respawn ----
 
 
@@ -548,6 +385,7 @@ public class PlayerController : MonoBehaviour
 		// Slide checks
 		if (CapsuleCollider == null) CapsuleCollider = GetComponent<CapsuleCollider>();
 		if (Slide == null) Slide = GetComponent<SlidePlayerSystem>();
+		
 		if (CapsuleCollider != null && Slide != null)
 		{
 			float checkRadius = CapsuleCollider.radius * 0.85f;
@@ -566,6 +404,7 @@ public class PlayerController : MonoBehaviour
 
 		// Wall check for cling
 		if (WallInteraction == null) WallInteraction = GetComponent<WallInteractionPlayerSystem>();
+		
 		if (WallInteraction != null)
 		{
 			Vector3 direction = Vector3.right * FacingDirection;
@@ -579,9 +418,11 @@ public class PlayerController : MonoBehaviour
 		
 		
 		// Grid platform grab check
-		if (CapsuleCollider != null)
+		if (GridInteraction == null) GridInteraction = GetComponent<GridInteractionPlayerSystem>();
+		
+		if (CapsuleCollider != null && GridInteraction != null)
 		{
-			Vector3 grabCenter = transform.position + Vector3.up * gridHangHandHeight;
+			Vector3 grabCenter = transform.position + Vector3.up * GridInteraction.GridHangHandHeight;
 			Vector3 grabSize = new(CapsuleCollider.radius * 1.6f, 0.4f, 1f);
 
 			Gizmos.color = Color.magenta;
