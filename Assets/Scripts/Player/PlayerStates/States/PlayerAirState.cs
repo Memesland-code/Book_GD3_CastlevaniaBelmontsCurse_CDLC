@@ -15,6 +15,11 @@ public class PlayerAirState : PlayerState
 		{
 			if (player.CanWallCoyoteJump)
 			{
+				if (player.LastWallDirection == 0)
+				{
+					player.ExecuteJump();
+					return;
+				}
 				player.PerformWallJump(player.LastWallDirection);
 				return;
 			}

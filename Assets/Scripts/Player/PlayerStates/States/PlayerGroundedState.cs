@@ -15,6 +15,7 @@ public class PlayerGroundedState : PlayerState
     
     public override void HandleInput()
     {
+	    // Pass through grid platform
 	    if (player.Input.Move.y < -0.5f && player.Input.JumpPressedThisFrame)
 	    {
 		    GridPlatform standingGrid = player.GetStandingGridPlatform();
@@ -52,6 +53,7 @@ public class PlayerGroundedState : PlayerState
 	    
 	    if (!player.IsGrounded)
 	    {
+		    player.StartAirCoyoteTime();
 		    stateMachine.ChangeState(player.AirState);
 		    return;
 	    }

@@ -17,6 +17,8 @@ public class PlayerController : MonoBehaviour
 	[Space(10), Header("Jump Settings")]
 	[SerializeField] private float upForce = 2.5f;
 	[SerializeField] private int maxAirJumpsNumber;
+	[Tooltip("Grace windows in which player can still jump after leaving a wall (s)")]
+	[SerializeField] private float airCoyoteDuration = 0.14f;
 	
 	
 	[Space(10), Header("Gravity & Fall")]
@@ -38,18 +40,18 @@ public class PlayerController : MonoBehaviour
 	[SerializeField] private float slideSpeed = 14f;
 	
 	[Tooltip("Lowest speed at very end of slide (m/s)")]
-	[SerializeField] private float slideEndSpeed = 3f;
+	[SerializeField] private float slideEndSpeed = 8.5f;
 	
 	[Tooltip("Total duration of basic slide without tunnel (s)")]
-	[SerializeField] private float slideDuration = 0.45f;
+	[SerializeField] private float slideDuration = 0.35f;
 	
 	[Tooltip("Proportion of full speed during slide (%/100)")]
 	[Range(0.1f, 1f)]
-	[SerializeField] private float slideConstantRatio = 0.8f;
+	[SerializeField] private float slideConstantRatio = 0.4f;
 	
 	
 	[Header("Hitbox & Ceiling Detection")]
-	[SerializeField] private float slidingHeight = 1.05f;
+	[SerializeField] private float slidingHeight = 1f;
 	[Tooltip("Layer of solid walls and ceilings")]
 	[SerializeField] private LayerMask ceilingObstacleLayers;
 	
@@ -72,9 +74,6 @@ public class PlayerController : MonoBehaviour
 	
 	
 	[Header("Wall Jump")]
-	[Tooltip("Grace windows in which player can still jump after leaving a wall (s)")]
-	[SerializeField] private float wallCoyoteDuration = 0.14f;
-	
 	[Tooltip("X = push force opposite from wall, Y = jump height")]
 	[SerializeField] private Vector2 wallJumpForce = new(2f, 4f);
 	
@@ -151,7 +150,7 @@ public class PlayerController : MonoBehaviour
 	public float WallSlideAcceleration => wallSlideAcceleration;
 	public float MaxWallSlideSpeed => maxWallSlideSpeed;
 	public Vector2 WallJumpForce => wallJumpForce;
-	public bool CanWallCoyoteJump => wallCoyoteTimer > 0f;
+	public bool CanWallCoyoteJump => airCoyoteTimer > 0f;
 	public int LastWallDirection => lastWallDirection;
 	
 	// Grid platform
@@ -189,7 +188,7 @@ public class PlayerController : MonoBehaviour
 	private bool isFacingRight = true;
 	private int currentJumpsCombo;
 	private float standingHeight;
-	private float wallCoyoteTimer;
+	private float airCoyoteTimer;
 	private int lastWallDirection;
 	private float jumpGraceTimer;
 	
@@ -261,9 +260,17 @@ public class PlayerController : MonoBehaviour
 		currentStateName = StateMachine.CurrentState.GetType().Name;
 		#endif
 		
+		RunTimersUpdate();
+		StateMachine.CurrentState.HandleInput();
+		StateMachine.CurrentState.LogicUpdate();
+	}
+
+
+	private void RunTimersUpdate()
+	{
 		if (wallGrabCooldownTimer > 0f) wallGrabCooldownTimer -= Time.deltaTime;
 		if (wallJumpInputLockTimer > 0f) wallJumpInputLockTimer -= Time.deltaTime;
-		if (wallCoyoteTimer > 0f) wallCoyoteTimer -= Time.deltaTime;
+		if (airCoyoteTimer > 0f) airCoyoteTimer -= Time.deltaTime;
 		if (jumpGraceTimer > 0f) jumpGraceTimer -= Time.deltaTime;
 		
 		if (gridDropThroughTimer > 0f)
@@ -275,9 +282,6 @@ public class PlayerController : MonoBehaviour
 				ignoredGridPlatform = null;
 			}
 		}
-		
-		StateMachine.CurrentState.HandleInput();
-		StateMachine.CurrentState.LogicUpdate();
 	}
 	
 	
@@ -341,15 +345,13 @@ public class PlayerController : MonoBehaviour
 	
 	public void ExecuteJump()
 	{
+		ClearWallCoyoteTime();
 		SetPhysicsMaterial(isGrounded: false);
 		
-		//float jumpForce = Mathf.Sqrt(upForce * -3 * (Physics.gravity.y * gravityScale));
 		float jumpVelocity = Mathf.Sqrt(upForce * -3f * (Physics.gravity.y * gravityScale)) / Rigidbody.mass;
 		Rigidbody.linearVelocity = new Vector3(Rigidbody.linearVelocity.x, jumpVelocity, 0);
 		
 		jumpGraceTimer = 0.08f;
-		//Rigidbody.linearVelocity = new Vector3(Rigidbody.linearVelocity.x, 0f, 0f);
-		//Rigidbody.AddForce(Vector3.up * jumpForce, ForceMode.Impulse);
 		currentJumpsCombo++;
 	}
 
@@ -498,16 +500,16 @@ public class PlayerController : MonoBehaviour
 	}
 
 
-	public void StartWallCoyoteTime(int wallDir)
+	public void StartAirCoyoteTime(int? wallDir = 0)
 	{
-		lastWallDirection = wallDir;
-		wallCoyoteTimer = wallCoyoteDuration;
+		lastWallDirection = wallDir ?? lastWallDirection;
+		airCoyoteTimer = airCoyoteDuration;
 	}
 
 
 	public void ClearWallCoyoteTime()
 	{
-		wallCoyoteTimer = 0f;
+		airCoyoteTimer = 0f;
 	}
 
 

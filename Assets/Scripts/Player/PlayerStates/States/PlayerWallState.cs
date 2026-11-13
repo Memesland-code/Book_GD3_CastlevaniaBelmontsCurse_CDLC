@@ -47,7 +47,7 @@ public class PlayerWallState : PlayerState
 		{
 			player.SetFacingDirection(inputX > 0f);
 			player.StartWallGrabCooldown();
-			player.StartWallCoyoteTime(wallDirection);
+			player.StartAirCoyoteTime(wallDirection);
 			stateMachine.ChangeState(player.AirState);
 		}
 	}

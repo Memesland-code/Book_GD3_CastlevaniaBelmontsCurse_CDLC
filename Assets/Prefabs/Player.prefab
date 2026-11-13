@@ -281,7 +281,7 @@ MonoBehaviour:
   wallSlideAcceleration: 10
   maxWallSlideSpeed: 12
   wallCoyoteDuration: 0.14
-  wallJumpForce: {x: 10, y: 14}
+  wallJumpForce: {x: 10, y: 16.5}
   wallJumpInputLockDuration: 0.14
   wallGrabCooldownDuration: 0.15
   wallCheckDistance: 0.6
