@@ -35,7 +35,7 @@ public class PlayerAirState : PlayerState
 	public override void LogicUpdate()
 	{
 		// Ledge checking during air time
-		if (player.LedgeDetector.CheckForLedge(out _, out _))
+		if (player.LedgeGrab.CheckForLedge(out _, out _))
 		{
 			stateMachine.ChangeState(player.LedgeHangingState);
 			return;

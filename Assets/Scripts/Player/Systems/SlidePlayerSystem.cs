@@ -1,6 +1,6 @@
 using UnityEngine;
 
-public class PlayerSlide : MonoBehaviour
+public class SlidePlayerSystem : MonoBehaviour
 {
 	[Space(10), Header("Slide Settings")]
 	[Tooltip("Constant speed at start (m/s)")]

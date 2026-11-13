@@ -37,10 +37,10 @@ public class PlayerLedgeClimbingState : PlayerState
 	private IEnumerator ClimbRoutine()
 	{
 		Vector3 startPos = player.transform.position;
-		Vector3 endPos = player.transform.position + (player.transform.forward * player.LedgeDetector.ClimbOffset.z) + (Vector3.up * player.LedgeDetector.ClimbOffset.y);
+		Vector3 endPos = player.transform.position + (player.transform.forward * player.LedgeGrab.ClimbOffset.z) + (Vector3.up * player.LedgeGrab.ClimbOffset.y);
 
 		float elapsed = 0f;
-		float duration = player.LedgeDetector.ClimbDuration;
+		float duration = player.LedgeGrab.ClimbDuration;
 		
 		while (elapsed < duration)
 		{
@@ -62,7 +62,7 @@ public class PlayerLedgeClimbingState : PlayerState
 			climbCoroutine = null;
 		}
 		
-		player.LedgeDetector.TriggerReleaseCooldown();
+		player.LedgeGrab.TriggerReleaseCooldown();
 		player.UnfreezePhysicsFromLedge();
 	}
 }

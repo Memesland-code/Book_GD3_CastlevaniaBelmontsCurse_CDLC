@@ -5,9 +5,9 @@ using UnityEngine;
 [RequireComponent(typeof(Rigidbody))]
 [RequireComponent(typeof(CapsuleCollider))]
 [RequireComponent(typeof(InputManager))]
-[RequireComponent(typeof(LedgeGrab))]
-[RequireComponent(typeof(SafePositionTracker))]
-[RequireComponent(typeof(PlayerSlide))]
+[RequireComponent(typeof(LedgeGrabPlayerSystem))]
+[RequireComponent(typeof(SafePositionTrackerPlayerSystem))]
+[RequireComponent(typeof(SlidePlayerSystem))]
 public class PlayerController : MonoBehaviour
 {
 	[Header("Movement Settings")]
@@ -95,7 +95,7 @@ public class PlayerController : MonoBehaviour
 	
 	//* Internal Components
 	private CinemachineCamera camera;
-	private GroundDetector groundDetector;
+	private GroundDetectorPlayerSystem groundDetector;
 	public CapsuleCollider CapsuleCollider { get; private set; }
 	private RigidbodyConstraints originalConstraints;
 	
@@ -104,9 +104,9 @@ public class PlayerController : MonoBehaviour
 	//* Variables Getters for PlayerState
 	public InputManager Input { get; private set; }
 	public Rigidbody Rigidbody { get; private set; }
-	public LedgeGrab LedgeDetector { get; private set; }
-	public SafePositionTracker SafeTracker { get; private set; }
-	public PlayerSlide Slide { get; private set; }
+	public LedgeGrabPlayerSystem LedgeGrab { get; private set; }
+	public SafePositionTrackerPlayerSystem SafePositionTracker { get; private set; }
+	public SlidePlayerSystem Slide { get; private set; }
 
 	// Jump Settings
 	public float GroundSpeed => groundSpeed;
@@ -195,12 +195,12 @@ public class PlayerController : MonoBehaviour
 	{
 		Rigidbody = GetComponent<Rigidbody>();
 		Input = GetComponent<InputManager>();
-		LedgeDetector = GetComponent<LedgeGrab>();
-		SafeTracker = GetComponent<SafePositionTracker>();
-		Slide = GetComponent<PlayerSlide>();
+		LedgeGrab = GetComponent<LedgeGrabPlayerSystem>();
+		SafePositionTracker = GetComponent<SafePositionTrackerPlayerSystem>();
+		Slide = GetComponent<SlidePlayerSystem>();
 		
 		CapsuleCollider = GetComponent<CapsuleCollider>();
-		groundDetector = GetComponentInChildren<GroundDetector>();
+		groundDetector = GetComponentInChildren<GroundDetectorPlayerSystem>();
 		originalConstraints = Rigidbody.constraints;
 
 		GameObject camObj = GameObject.FindWithTag("MainCamera");
@@ -412,10 +412,10 @@ public class PlayerController : MonoBehaviour
 
 	public void AlignToLedge()
 	{
-		Vector3 hangPosition = LedgeDetector.CurrentLedgeHit.point - (transform.forward * LedgeDetector.WallDistanceOffset);
-		hangPosition.y -= (LedgeDetector.LedgeCheckOrigin.position.y - transform.position.y);
+		Vector3 hangPosition = LedgeGrab.CurrentLedgeHit.point - (transform.forward * LedgeGrab.WallDistanceOffset);
+		hangPosition.y -= (LedgeGrab.LedgeCheckOrigin.position.y - transform.position.y);
 		transform.position = hangPosition;
-		transform.rotation = Quaternion.LookRotation(-LedgeDetector.CurrentWallHit.normal);
+		transform.rotation = Quaternion.LookRotation(-LedgeGrab.CurrentWallHit.normal);
 	}
 	
 	
@@ -627,7 +627,7 @@ public class PlayerController : MonoBehaviour
 	{
 		// Slide checks
 		if (CapsuleCollider == null) CapsuleCollider = GetComponent<CapsuleCollider>();
-		if (Slide == null) Slide = GetComponent<PlayerSlide>();
+		if (Slide == null) Slide = GetComponent<SlidePlayerSystem>();
 		if (CapsuleCollider != null && Slide != null)
 		{
 			if (CapsuleCollider == null) return;

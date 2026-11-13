@@ -1,6 +1,6 @@
 using UnityEngine;
 
-public class LedgeGrab : MonoBehaviour
+public class LedgeGrabPlayerSystem : MonoBehaviour
 {
     [Header("Detection Setup")]
     [SerializeField] private Transform wallCheckOrigin; // Chest / eye level

@@ -46,9 +46,9 @@ public class PlayerGroundedState : PlayerState
 
     public override void LogicUpdate()
     {
-	    if (player.SafeTracker != null)
+	    if (player.SafePositionTracker != null)
 	    {
-		    player.SafeTracker.TickTracker();
+		    player.SafePositionTracker.TickTracker();
 	    }
 	    
 	    if (!player.IsGrounded)

@@ -1,6 +1,6 @@
 using UnityEngine;
 
-public class GroundDetector : MonoBehaviour
+public class GroundDetectorPlayerSystem : MonoBehaviour
 {
 	[SerializeField] private float distance;
 

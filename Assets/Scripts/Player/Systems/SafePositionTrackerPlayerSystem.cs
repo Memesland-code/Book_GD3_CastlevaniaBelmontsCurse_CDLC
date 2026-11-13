@@ -1,6 +1,6 @@
 using UnityEngine;
 
-public class SafePositionTracker : MonoBehaviour
+public class SafePositionTrackerPlayerSystem : MonoBehaviour
 {
     [Header("Validation Filters")]
     [SerializeField] private LayerMask safeGroundLayers;
@@ -18,6 +18,7 @@ public class SafePositionTracker : MonoBehaviour
 
     private float checkTimer;
     private CapsuleCollider capsuleCollider;
+    /*!
     private float pivotToFeetOffset;
     
     private void Awake()
@@ -28,7 +29,7 @@ public class SafePositionTracker : MonoBehaviour
 	    {
 		    pivotToFeetOffset = (capsuleCollider.height * 0.5f) - capsuleCollider.center.y;
 	    }
-    }
+    */
 
 
     
