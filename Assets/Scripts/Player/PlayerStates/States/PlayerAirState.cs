@@ -15,12 +15,12 @@ public class PlayerAirState : PlayerState
 		{
 			if (player.CanWallCoyoteJump)
 			{
-				if (player.LastWallDirection == 0)
+				if (player.WallInteraction.LastWallDirection == 0)
 				{
 					player.ExecuteJump();
 					return;
 				}
-				player.PerformWallJump(player.LastWallDirection);
+				player.WallInteraction.PerformWallJump(player.WallInteraction.LastWallDirection);
 				return;
 			}
 
@@ -49,20 +49,13 @@ public class PlayerAirState : PlayerState
 		}
 		
 		// Wall slide check
-		if (player.Rigidbody.linearVelocity.y <= player.MaxWallGrabUpwardVelocity && player.CanGrabWall && player.IsTouchingWall())
+		if (player.Rigidbody.linearVelocity.y <= player.WallInteraction.MaxWallGrabUpwardVelocity && player.CanGrabWall && player.WallInteraction.IsTouchingWall())
 		{
 			stateMachine.ChangeState(player.WallState);
 			return;
 		}
 		
 		// Back to ground
-		/*
-		 if (player.IsGrounded && player.Rigidbody.linearVelocity.y <= 0.1f)
-		{
-			stateMachine.ChangeState(player.GroundedState);
-			return;
-		}
-		*/
 		if (!player.IsJumpGraceActive && player.IsGrounded && player.Rigidbody.linearVelocity.y <= 0.1f)
 		{
 			stateMachine.ChangeState(player.GroundedState);

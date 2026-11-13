@@ -8,6 +8,7 @@ using UnityEngine;
 [RequireComponent(typeof(LedgeGrabPlayerSystem))]
 [RequireComponent(typeof(SafePositionTrackerPlayerSystem))]
 [RequireComponent(typeof(SlidePlayerSystem))]
+[RequireComponent(typeof(WallInteractionPlayerSystem))]
 public class PlayerController : MonoBehaviour
 {
 	[Header("Movement Settings")]
@@ -34,41 +35,6 @@ public class PlayerController : MonoBehaviour
 	[Space(10), Header("Physic Materials")]
 	[SerializeField] private PhysicsMaterial groundMaterial;
 	[SerializeField] private PhysicsMaterial airMaterial;
-	
-	
-	[Space(10), Header("Wall Cling & Slide")]
-	[Tooltip("Max vertical velocity allowed to cling to wall")]
-	[SerializeField] private float maxWallGrabUpwardVelocity = 2.5f;
-	
-	[Tooltip("How much time does the character stays frozen on the wall before starting to fall (s)")]
-	[SerializeField] private float wallClingDuration = 0.6f;
-	
-	[Tooltip("Down slide start speed (m/s)")]
-	[SerializeField] private float initialWallSlideSpeed = 1.5f;
-	
-	[Tooltip("Down slide acceleration (m/s²)")]
-	[SerializeField] private float wallSlideAcceleration = 6f;
-	
-	[Tooltip("Down slide max speed (m/s)")]
-	[SerializeField] private float maxWallSlideSpeed = 7f;
-	
-	
-	[Header("Wall Jump")]
-	[Tooltip("X = push force opposite from wall, Y = jump height")]
-	[SerializeField] private Vector2 wallJumpForce = new(2f, 4f);
-	
-	[Tooltip("Horizontal input ignore time")]
-	[SerializeField] private float wallJumpInputLockDuration = 0.14f;
-	
-	[Tooltip("Delay before being able to cling to a wall")]
-	[SerializeField] private float wallGrabCooldownDuration = 0.15f;
-
-	
-	[Header("Wall Detection for Cling")]
-	[SerializeField] private float wallCheckDistance = 0.6f;
-	[SerializeField] private float wallCheckUpperHeight = 1.6f; // Chest
-	[SerializeField] private float wallCheckLowerHeight = 0.5f; // knees
-	[SerializeField] private LayerMask wallLayers;
 	
 	
 	[Space(10), Header("Grid Platform")]
@@ -107,29 +73,21 @@ public class PlayerController : MonoBehaviour
 	public LedgeGrabPlayerSystem LedgeGrab { get; private set; }
 	public SafePositionTrackerPlayerSystem SafePositionTracker { get; private set; }
 	public SlidePlayerSystem Slide { get; private set; }
+	public WallInteractionPlayerSystem WallInteraction { get; private set; }
 
 	// Jump Settings
 	public float GroundSpeed => groundSpeed;
 	public float AirSpeed => airSpeed;
 	private int currentJumpsCombo;
 	public bool CanJump => currentJumpsCombo < maxAirJumpsNumber;
+	private float airCoyoteTimer;
+	public bool CanWallCoyoteJump => airCoyoteTimer > 0f;
 
 	// Gravity Related
 	public float GravityScale => gravityScale;
 	public float FallGravityScale => fallGravityScale;
 	public float LowJumpGravityScale => lowJumpGravityScale;
 	
-	// Wall Cling
-	public float MaxWallGrabUpwardVelocity => maxWallGrabUpwardVelocity;
-	public float WallClingDuration => wallClingDuration;
-	public float InitialWallSlideSpeed => initialWallSlideSpeed;
-	public float WallSlideAcceleration => wallSlideAcceleration;
-	public float MaxWallSlideSpeed => maxWallSlideSpeed;
-	public Vector2 WallJumpForce => wallJumpForce;
-	private float airCoyoteTimer;
-	public bool CanWallCoyoteJump => airCoyoteTimer > 0f;
-	private int lastWallDirection;
-	public int LastWallDirection => lastWallDirection;
 	
 	// Grid platform
 	public GridPlatform CurrentGridPlatform { get; private set; }
@@ -142,11 +100,14 @@ public class PlayerController : MonoBehaviour
 	//* General
 	public bool IsGrounded => groundDetector != null && groundDetector.touched;
 	
-	public bool CanGrabWall => wallGrabCooldownTimer <= 0f;
+	public bool CanGrabWall => WallInteraction.WallGrabCooldownTimer <= 0f;
 	
-	public bool IsWallJumpInputLocked => wallJumpInputLockTimer > 0f;
+	public bool IsWallJumpInputLocked => WallInteraction.WallJumpInputLockTimer > 0f;
 	
 	public bool IsFacingRight => isFacingRight;
+
+	public float AirCoyoteTimer { get; set; }
+	public float AirCoyoteDuration => airCoyoteDuration;
 	
 	private float jumpGraceTimer;
 	public bool IsJumpGraceActive => jumpGraceTimer > 0f;
@@ -175,12 +136,6 @@ public class PlayerController : MonoBehaviour
 	
 	
 	
-	// Internal timers
-	private float wallGrabCooldownTimer;
-	private float wallJumpInputLockTimer;
-	
-	
-	
 	[Space(20), Header("Cheats")]
 	public bool noClip;
 	
@@ -198,6 +153,7 @@ public class PlayerController : MonoBehaviour
 		LedgeGrab = GetComponent<LedgeGrabPlayerSystem>();
 		SafePositionTracker = GetComponent<SafePositionTrackerPlayerSystem>();
 		Slide = GetComponent<SlidePlayerSystem>();
+		WallInteraction = GetComponent<WallInteractionPlayerSystem>();
 		
 		CapsuleCollider = GetComponent<CapsuleCollider>();
 		groundDetector = GetComponentInChildren<GroundDetectorPlayerSystem>();
@@ -248,8 +204,8 @@ public class PlayerController : MonoBehaviour
 
 	private void RunTimersUpdate()
 	{
-		if (wallGrabCooldownTimer > 0f) wallGrabCooldownTimer -= Time.deltaTime;
-		if (wallJumpInputLockTimer > 0f) wallJumpInputLockTimer -= Time.deltaTime;
+		if (WallInteraction.WallGrabCooldownTimer > 0f) WallInteraction.WallGrabCooldownTimer -= Time.deltaTime;
+		if (WallInteraction.WallJumpInputLockTimer > 0f) WallInteraction.WallJumpInputLockTimer -= Time.deltaTime;
 		if (airCoyoteTimer > 0f) airCoyoteTimer -= Time.deltaTime;
 		if (jumpGraceTimer > 0f) jumpGraceTimer -= Time.deltaTime;
 		
@@ -325,7 +281,7 @@ public class PlayerController : MonoBehaviour
 	
 	public void ExecuteJump()
 	{
-		ClearWallCoyoteTime();
+		ClearAirCoyoteTime();
 		SetPhysicsMaterial(isGrounded: false);
 		
 		float jumpVelocity = Mathf.Sqrt(upForce * -3f * (Physics.gravity.y * gravityScale)) / Rigidbody.mass;
@@ -381,6 +337,20 @@ public class PlayerController : MonoBehaviour
 		
 		Rigidbody.linearVelocity = new Vector3(newVelocityX, Rigidbody.linearVelocity.y, 0f);
 	}
+	
+	
+	
+	public void StartAirCoyoteTime(int? wallDir = 0)
+	{
+		WallInteraction.LastWallDirection = wallDir ?? WallInteraction.LastWallDirection;
+		airCoyoteTimer = airCoyoteDuration;
+	}
+
+
+	public void ClearAirCoyoteTime()
+	{
+		airCoyoteTimer = 0f;
+	}
 
 	
 	
@@ -416,56 +386,6 @@ public class PlayerController : MonoBehaviour
 		hangPosition.y -= (LedgeGrab.LedgeCheckOrigin.position.y - transform.position.y);
 		transform.position = hangPosition;
 		transform.rotation = Quaternion.LookRotation(-LedgeGrab.CurrentWallHit.normal);
-	}
-	
-	
-	// ---- Cling & Wall Jump ----
-	
-	
-	public void StartWallGrabCooldown() => wallGrabCooldownTimer = wallGrabCooldownDuration;
-	public void StartWallJumpInputLock() => wallJumpInputLockTimer = wallJumpInputLockDuration;
-	
-
-	/// <summary>
-	/// Wall detection using chest and knees position to validate real platform
-	/// </summary>
-	public bool IsTouchingWall()
-	{
-		Vector3 direction = Vector3.right * FacingDirection;
-		Vector3 upperOrigin = transform.position + Vector3.up * wallCheckUpperHeight;
-		Vector3 lowerOrigin = transform.position + Vector3.up * wallCheckLowerHeight;
-		
-		bool upperHit = Physics.Raycast(upperOrigin, direction, wallCheckDistance, wallLayers, QueryTriggerInteraction.Ignore);
-		bool lowerHit = Physics.Raycast(lowerOrigin, direction, wallCheckDistance, wallLayers, QueryTriggerInteraction.Ignore);
-		
-		return upperHit && lowerHit;
-	}
-
-
-	public void StartAirCoyoteTime(int? wallDir = 0)
-	{
-		lastWallDirection = wallDir ?? lastWallDirection;
-		airCoyoteTimer = airCoyoteDuration;
-	}
-
-
-	public void ClearWallCoyoteTime()
-	{
-		airCoyoteTimer = 0f;
-	}
-
-
-	public void PerformWallJump(int wallDir)
-	{
-		ClearWallCoyoteTime();
-		int jumpAwayDirection = -wallDir;
-			
-		SetFacingDirection(jumpAwayDirection > 0);
-			
-		// Push player up + opposite of wall
-		Rigidbody.linearVelocity = new Vector3(jumpAwayDirection * WallJumpForce.x, WallJumpForce.y, 0f);
-			
-		StartWallJumpInputLock();
 	}
 	
 	
@@ -630,8 +550,6 @@ public class PlayerController : MonoBehaviour
 		if (Slide == null) Slide = GetComponent<SlidePlayerSystem>();
 		if (CapsuleCollider != null && Slide != null)
 		{
-			if (CapsuleCollider == null) return;
-
 			float checkRadius = CapsuleCollider.radius * 0.85f;
 			float minAllowedHeight = CapsuleCollider.radius * 2f;
 			float effectiveSlideHeight = Mathf.Max(Slide.SlidingHeight, minAllowedHeight);
@@ -647,14 +565,16 @@ public class PlayerController : MonoBehaviour
 		}
 
 		// Wall check for cling
+		if (WallInteraction == null) WallInteraction = GetComponent<WallInteractionPlayerSystem>();
+		if (WallInteraction != null)
 		{
 			Vector3 direction = Vector3.right * FacingDirection;
-			Vector3 upperOrigin = transform.position + Vector3.up * wallCheckUpperHeight;
-			Vector3 lowerOrigin = transform.position + Vector3.up * wallCheckLowerHeight;
+			Vector3 upperOrigin = transform.position + Vector3.up * WallInteraction.WallCheckUpperHeight;
+			Vector3 lowerOrigin = transform.position + Vector3.up * WallInteraction.WallCheckLowerHeight;
 
-			Gizmos.color = Application.isPlaying && IsTouchingWall() ? Color.cyan : Color.yellow;
-			Gizmos.DrawLine(upperOrigin, upperOrigin + direction * wallCheckDistance);
-			Gizmos.DrawLine(lowerOrigin, lowerOrigin + direction * wallCheckDistance);
+			Gizmos.color = Application.isPlaying && WallInteraction.IsTouchingWall() ? Color.cyan : Color.yellow;
+			Gizmos.DrawLine(upperOrigin, upperOrigin + direction * WallInteraction.WallCheckDistance);
+			Gizmos.DrawLine(lowerOrigin, lowerOrigin + direction * WallInteraction.WallCheckDistance);
 		}
 		
 		

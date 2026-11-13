@@ -11,8 +11,8 @@ public class PlayerWallState : PlayerState
 
 	public override void Enter()
 	{
-		clingTimer = player.WallClingDuration;
-		currentSlideSpeed = player.InitialWallSlideSpeed;
+		clingTimer = player.WallInteraction.WallClingDuration;
+		currentSlideSpeed = player.WallInteraction.InitialWallSlideSpeed;
 		wallDirection = player.FacingDirection;
 		
 		player.Rigidbody.useGravity = false;
@@ -28,7 +28,7 @@ public class PlayerWallState : PlayerState
 		// Wall jump (must check at all time)
 		if (player.Input.JumpPressedThisFrame)
 		{
-			player.PerformWallJump(wallDirection);
+			player.WallInteraction.PerformWallJump(wallDirection);
 			stateMachine.ChangeState(player.AirState);
 			return;
 		}
@@ -37,7 +37,7 @@ public class PlayerWallState : PlayerState
 		if (inputY < -0.5f)
 		{
 			player.SetFacingDirection(wallDirection < 0);
-			player.StartWallGrabCooldown();
+			player.WallInteraction.StartWallGrabCooldown();
 			stateMachine.ChangeState(player.AirState);
 			return;
 		}
@@ -46,7 +46,7 @@ public class PlayerWallState : PlayerState
 		if (inputX * wallDirection < -0.1f)
 		{
 			player.SetFacingDirection(inputX > 0f);
-			player.StartWallGrabCooldown();
+			player.WallInteraction.StartWallGrabCooldown();
 			player.StartAirCoyoteTime(wallDirection);
 			stateMachine.ChangeState(player.AirState);
 		}
@@ -63,9 +63,9 @@ public class PlayerWallState : PlayerState
 		}
 		
 		// If wall disapears (no more wall) -> AirState
-		if (!player.IsTouchingWall())
+		if (!player.WallInteraction.IsTouchingWall())
 		{
-			player.StartWallGrabCooldown();
+			player.WallInteraction.StartWallGrabCooldown();
 			stateMachine.ChangeState(player.AirState);
 			return;
 		}
@@ -77,7 +77,7 @@ public class PlayerWallState : PlayerState
 		}
 		else
 		{
-			currentSlideSpeed = Mathf.MoveTowards(currentSlideSpeed, player.MaxWallSlideSpeed, player.WallSlideAcceleration * Time.deltaTime);
+			currentSlideSpeed = Mathf.MoveTowards(currentSlideSpeed, player.WallInteraction.MaxWallSlideSpeed, player.WallInteraction.WallSlideAcceleration * Time.deltaTime);
 		}
 	}
 
