@@ -14,7 +14,6 @@ public class BreakingPlatform : MonoBehaviour
 	[SerializeField] private float respawnDelay = 3f;
 
 	[Header("Visual Feedback")]
-	[Tooltip("Child visual reference")]
 	[SerializeField] private Transform visualRoot;
 
 	[Tooltip("Shaking intensity when about to break")]

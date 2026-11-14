@@ -1,19 +1,18 @@
 using UnityEngine;
 
-public class PlayerWallState : PlayerState
+public class PlayerWallJumpState : PlayerState
 {
 	private float clingTimer;
 	private float currentSlideSpeed;
-	private int wallDirection;
 	
-	public PlayerWallState(PlayerController player, PlayerStateMachine stateMachine) : base(player, stateMachine) { }
+	public PlayerWallJumpState(PlayerController player, PlayerStateMachine stateMachine) : base(player, stateMachine) { }
 
 
 	public override void Enter()
 	{
-		clingTimer = player.WallInteraction.WallClingDuration;
-		currentSlideSpeed = player.WallInteraction.InitialWallSlideSpeed;
-		wallDirection = player.FacingDirection;
+		clingTimer = player.WallInteractionSystem.WallClingDuration;
+		currentSlideSpeed = player.WallInteractionSystem.InitialWallSlideSpeed;
+		player.CurrentWallDirection = player.FacingDirection;
 		
 		player.Rigidbody.useGravity = false;
 		player.Rigidbody.linearVelocity = Vector3.zero;
@@ -28,7 +27,7 @@ public class PlayerWallState : PlayerState
 		// Wall jump (must check at all time)
 		if (player.Input.JumpPressedThisFrame)
 		{
-			player.WallInteraction.PerformWallJump(wallDirection);
+			player.WallInteractionSystem.PerformWallJump(player.CurrentWallDirection);
 			stateMachine.ChangeState(player.AirState);
 			return;
 		}
@@ -36,18 +35,19 @@ public class PlayerWallState : PlayerState
 		// Down button -> character releases wall and fall
 		if (inputY < -0.5f)
 		{
-			player.SetFacingDirection(wallDirection < 0);
-			player.WallInteraction.StartWallGrabCooldown();
+			player.SetFacingDirection(player.CurrentWallDirection < 0);
+			player.WallInteractionSystem.StartWallGrabCooldown();
 			stateMachine.ChangeState(player.AirState);
 			return;
 		}
 		
 		// Wall opposite direction -> go in opposite direction of wall
-		if (inputX * wallDirection < -0.1f)
+		if (inputX * player.CurrentWallDirection < -0.1f)
 		{
 			player.SetFacingDirection(inputX > 0f);
-			player.WallInteraction.StartWallGrabCooldown();
-			player.StartAirCoyoteTime(wallDirection);
+			player.WallInteractionSystem.StartWallGrabCooldown();
+			int wallDir = player.CurrentWallDirection;
+			player.StartCoyoteTime(() => player.WallInteractionSystem.PerformWallJump(wallDir));
 			stateMachine.ChangeState(player.AirState);
 		}
 	}
@@ -63,9 +63,9 @@ public class PlayerWallState : PlayerState
 		}
 		
 		// If wall disapears (no more wall) -> AirState
-		if (!player.WallInteraction.IsTouchingWall())
+		if (!player.WallInteractionSystem.IsTouchingWall())
 		{
-			player.WallInteraction.StartWallGrabCooldown();
+			player.WallInteractionSystem.StartWallGrabCooldown();
 			stateMachine.ChangeState(player.AirState);
 			return;
 		}
@@ -77,7 +77,7 @@ public class PlayerWallState : PlayerState
 		}
 		else
 		{
-			currentSlideSpeed = Mathf.MoveTowards(currentSlideSpeed, player.WallInteraction.MaxWallSlideSpeed, player.WallInteraction.WallSlideAcceleration * Time.deltaTime);
+			currentSlideSpeed = Mathf.MoveTowards(currentSlideSpeed, player.WallInteractionSystem.MaxWallSlideSpeed, player.WallInteractionSystem.WallSlideAcceleration * Time.deltaTime);
 		}
 	}
 

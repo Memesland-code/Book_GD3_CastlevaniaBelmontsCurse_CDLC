@@ -51,8 +51,8 @@ public class GridInteractionPlayerSystem : MonoBehaviour
 		if (player.CapsuleCollider == null) return;
 		
 		// Check for full character surface
-		Vector3 boxCenter = transform.position + Vector3.up * (player.StandingHeight * 0.5f);
-		Vector3 boxHalfExtents = new Vector3(1.5f, player.StandingHeight * 0.75f, 1f);
+		Vector3 boxCenter = transform.position + Vector3.up * (player.DefaultColliderHeight * 0.5f);
+		Vector3 boxHalfExtents = new Vector3(1.5f, player.DefaultColliderHeight * 0.75f, 1f);
 		
 		int hitCount = Physics.OverlapBoxNonAlloc(boxCenter, boxHalfExtents, nearbyGridBuffer, Quaternion.identity, gridPlatformLayer, QueryTriggerInteraction.Ignore);
 

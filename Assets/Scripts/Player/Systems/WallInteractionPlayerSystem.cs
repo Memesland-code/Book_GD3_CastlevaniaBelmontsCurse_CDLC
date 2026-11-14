@@ -18,8 +18,6 @@ public class WallInteractionPlayerSystem : MonoBehaviour
 	[Header("Wall Jump")]
 	[Tooltip("X = push force opposite from wall, Y = jump height")]
 	[SerializeField] private Vector2 wallJumpForce = new(2f, 4f);
-	[Tooltip("Horizontal input ignore time")]
-	[SerializeField] private float wallJumpInputLockDuration = 0.14f;
 	[Tooltip("Delay before being able to cling to a wall")]
 	[SerializeField] private float wallGrabCooldownDuration = 0.15f;
 
@@ -37,10 +35,8 @@ public class WallInteractionPlayerSystem : MonoBehaviour
 	public float WallSlideAcceleration => wallSlideAcceleration;
 	public float MaxWallSlideSpeed => maxWallSlideSpeed;
 	public Vector2 WallJumpForce => wallJumpForce;
-	//! private int lastWallDirection;
 	
 	public float WallCheckDistance => wallCheckDistance;
-	public int LastWallDirection { get; set; }
 	public float WallCheckUpperHeight => wallCheckUpperHeight;
 	public float WallCheckLowerHeight => wallCheckLowerHeight;
 	
@@ -49,7 +45,6 @@ public class WallInteractionPlayerSystem : MonoBehaviour
 	public float WallJumpInputLockTimer { get; set; }
 	
 	public void StartWallGrabCooldown() => WallGrabCooldownTimer = wallGrabCooldownDuration;
-	public void StartWallJumpInputLock() => WallJumpInputLockTimer = wallJumpInputLockDuration;
 
 	private PlayerController player;
 
@@ -79,7 +74,7 @@ public class WallInteractionPlayerSystem : MonoBehaviour
 	public void PerformWallJump(int wallDir)
 	{
 		player.Animator.SetTrigger(player.animJump);
-		player.ClearAirCoyoteTime();
+		player.ClearCoyoteTime();
 		int jumpAwayDirection = -wallDir;
 			
 		player.SetFacingDirection(jumpAwayDirection > 0);
@@ -87,6 +82,6 @@ public class WallInteractionPlayerSystem : MonoBehaviour
 		// Push player up + opposite of wall
 		player.Rigidbody.linearVelocity = new Vector3(jumpAwayDirection * WallJumpForce.x, WallJumpForce.y, 0f);
 			
-		StartWallJumpInputLock();
+		player.StartWallJumpInputLock();
 	}
 }

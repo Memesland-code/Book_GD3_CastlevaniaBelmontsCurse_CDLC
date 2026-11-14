@@ -161,6 +161,7 @@ GameObject:
   - component: {fileID: 7657737939199034235}
   - component: {fileID: 6898517849132983508}
   - component: {fileID: 3575180392548224476}
+  - component: {fileID: 2227831575562963503}
   m_Layer: 3
   m_Name: Player
   m_TagString: Player
@@ -285,7 +286,8 @@ MonoBehaviour:
   airSpeed: 8.5
   upForce: 4
   maxAirJumpsNumber: 0
-  airCoyoteDuration: 0.14
+  coyoteDuration: 0.14
+  wallJumpInputLockDuration: 0.14
   lowJumpGravityScale: 4.5
   gravityScale: 2.5
   fallGravityScale: 8
@@ -314,7 +316,7 @@ MonoBehaviour:
   ledgeCheckDistance: 0.5
   ignoreLayers:
     serializedVersion: 2
-    m_Bits: 8
+    m_Bits: 520
   maxWallAngleY: 0.3
   minLedgeFlatness: 0.7
   wallDistanceOffset: 0.5
@@ -364,7 +366,7 @@ MonoBehaviour:
   slidingHeight: 1
   ceilingObstacleLayers:
     serializedVersion: 2
-    m_Bits: 65
+    m_Bits: 577
 --- !u!114 &6898517849132983508
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -383,7 +385,6 @@ MonoBehaviour:
   wallSlideAcceleration: 10
   maxWallSlideSpeed: 12
   wallJumpForce: {x: 10, y: 16.5}
-  wallJumpInputLockDuration: 0.14
   wallGrabCooldownDuration: 0.15
   wallCheckDistance: 0.6
   wallCheckUpperHeight: 1.8
@@ -412,6 +413,34 @@ MonoBehaviour:
   gridClimbStepX: 0.1
   gridDropThroughDuration: 0.3
   gridDropDownSpeed: 25
+--- !u!114 &2227831575562963503
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5052189306663062249}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 279e04355241fbb43ad4676c76ba1799, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::WallRunPlayerSystem
+  wallRunLayer:
+    serializedVersion: 2
+    m_Bits: 512
+  wallCheckDistance: 0.65
+  upperCheckHeight: 1.5
+  lowerCheckHeight: 0.5
+  endCheckHeight: 1.2
+  grabCooldownDuration: 0.2
+  wallRunSpeed: 11
+  wallSurfaceOffset: 0.48
+  visualWallStickOffset: 0.48
+  visualWallHeightOffset: 0.5
+  visualRoot: {fileID: 89192121303068367}
+  wallRunJumpForce: {x: 23, y: 14}
+  endOfWallUpwardBoost: 27
+  chainAutoGrabDuration: 0.55
 --- !u!1001 &483686978327742756
 PrefabInstance:
   m_ObjectHideFlags: 0

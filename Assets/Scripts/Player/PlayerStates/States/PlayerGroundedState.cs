@@ -30,10 +30,10 @@ public class PlayerGroundedState : PlayerState
 	    // Pass through grid platform
 	    if (player.Input.Move.y < -0.5f && player.Input.JumpPressedThisFrame)
 	    {
-		    GridPlatform standingGrid = player.GridInteraction.GetStandingGridPlatform();
+		    GridPlatform standingGrid = player.GridInteractionSystem.GetStandingGridPlatform();
 		    if (standingGrid != null)
 		    {
-			    player.GridInteraction.StartGridDropThrough(standingGrid);
+			    player.GridInteractionSystem.StartGridDropThrough(standingGrid);
 			    stateMachine.ChangeState(player.AirState);
 			    return;
 		    }
@@ -58,14 +58,14 @@ public class PlayerGroundedState : PlayerState
 
     public override void LogicUpdate()
     {
-	    if (player.SafePositionTracker != null)
+	    if (player.SafePositionTrackerSystem != null)
 	    {
-		    player.SafePositionTracker.TickTracker();
+		    player.SafePositionTrackerSystem.TickTracker();
 	    }
 	    
 	    if (!player.IsGrounded)
 	    {
-		    player.StartAirCoyoteTime();
+		    player.StartCoyoteTime(player.ExecuteJump);
 		    stateMachine.ChangeState(player.AirState);
 		    return;
 	    }

@@ -9,7 +9,7 @@ public class PlayerLedgeHangingState : PlayerState
 	
 	public override void Enter()
 	{
-		hangTimer = player.LedgeGrab.HangTimer;
+		hangTimer = player.LedgeGrabSystem.HangTimer;
 		player.FreezePhysicsForLedge();
 		player.AlignToLedge();
 	}
@@ -58,7 +58,7 @@ public class PlayerLedgeHangingState : PlayerState
 
 	public override void Exit()
 	{
-		player.LedgeGrab.TriggerReleaseCooldown();
+		player.LedgeGrabSystem.TriggerReleaseCooldown();
 		player.UnfreezePhysicsFromLedge();
 	}
 }

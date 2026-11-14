@@ -10,6 +10,7 @@ using UnityEngine;
 [RequireComponent(typeof(SlidePlayerSystem))]
 [RequireComponent(typeof(WallInteractionPlayerSystem))]
 [RequireComponent(typeof(GridInteractionPlayerSystem))]
+[RequireComponent(typeof(WallRunPlayerSystem))]
 public class PlayerController : MonoBehaviour
 {
 	public readonly int isRunning = Animator.StringToHash("IsRunning");
@@ -24,7 +25,9 @@ public class PlayerController : MonoBehaviour
 	[SerializeField] private float upForce = 2.5f;
 	[SerializeField] private int maxAirJumpsNumber;
 	[Tooltip("Grace windows in which player can still jump after leaving a wall (s)")]
-	[SerializeField] private float airCoyoteDuration = 0.14f;
+	[SerializeField] private float coyoteDuration = 0.14f;
+	[Tooltip("Horizontal input ignore time")]
+	[SerializeField] private float wallJumpInputLockDuration = 0.14f;
 	
 	
 	[Space(10), Header("Gravity & Fall")]
@@ -50,23 +53,25 @@ public class PlayerController : MonoBehaviour
 	public Animator Animator { get; private set; }
 	
 	
-	
 	//* Variables Getters for PlayerState
 	public InputManager Input { get; private set; }
 	public Rigidbody Rigidbody { get; private set; }
-	public LedgeGrabPlayerSystem LedgeGrab { get; private set; }
-	public SafePositionTrackerPlayerSystem SafePositionTracker { get; private set; }
-	public SlidePlayerSystem Slide { get; private set; }
-	public WallInteractionPlayerSystem WallInteraction { get; private set; }
-	public GridInteractionPlayerSystem GridInteraction { get; private set; }
+	public LedgeGrabPlayerSystem LedgeGrabSystem { get; private set; }
+	public SafePositionTrackerPlayerSystem SafePositionTrackerSystem { get; private set; }
+	public SlidePlayerSystem SlideSystem { get; private set; }
+	public WallInteractionPlayerSystem WallInteractionSystem { get; private set; }
+	public GridInteractionPlayerSystem GridInteractionSystem { get; private set; }
+	public WallRunPlayerSystem WallRunSystem { get; private set; }
 
 	// Jump Settings
 	public float GroundSpeed => groundSpeed;
 	public float AirSpeed => airSpeed;
 	private int currentJumpsCombo;
 	public bool CanJump => currentJumpsCombo < maxAirJumpsNumber;
-	private float airCoyoteTimer;
-	public bool CanWallCoyoteJump => airCoyoteTimer > 0f;
+	private float coyoteTimer;
+	private System.Action pendingCoyoteJumpAction;
+	public bool CanCoyoteJump => coyoteTimer > 0f && pendingCoyoteJumpAction != null;
+	public void StartWallJumpInputLock() => WallInteractionSystem.WallJumpInputLockTimer = wallJumpInputLockDuration;
 
 	// Gravity Related
 	public float GravityScale => gravityScale;
@@ -77,23 +82,26 @@ public class PlayerController : MonoBehaviour
 	//* General
 	public bool IsGrounded => groundDetector != null && groundDetector.touched;
 	
-	public bool CanGrabWall => WallInteraction.WallGrabCooldownTimer <= 0f;
+	public bool CanGrabWall => WallInteractionSystem.WallGrabCooldownTimer <= 0f;
 	
-	public bool IsWallJumpInputLocked => WallInteraction.WallJumpInputLockTimer > 0f;
+	public bool IsWallJumpInputLocked => WallInteractionSystem.WallJumpInputLockTimer > 0f;
 	
 	public bool IsFacingRight => isFacingRight;
+	private bool isFacingRight = true;
+	public int FacingDirection => IsFacingRight ? 1 : -1;
+	
+	public int CurrentWallDirection { get; set; }
 
-	public float AirCoyoteTimer { get; set; }
-	public float AirCoyoteDuration => airCoyoteDuration;
+	//del public float AirCoyoteTimer { get; set; }
+	//del public float AirCoyoteDuration => airCoyoteDuration;
 	
 	private float jumpGraceTimer;
 	public bool IsJumpGraceActive => jumpGraceTimer > 0f;
 	
-	private bool isFacingRight = true;
-	public int FacingDirection => IsFacingRight ? 1 : -1;
-	
-	private float standingHeight;
-	public float StandingHeight => standingHeight;
+	private float defaultColliderHeight;
+	public float DefaultColliderHeight => defaultColliderHeight;
+	private Vector3 defaultColliderCenter;
+	public Vector3 DefaultColliderCenter => defaultColliderCenter;
 	
 
 	
@@ -105,8 +113,9 @@ public class PlayerController : MonoBehaviour
 	public PlayerLedgeClimbingState LedgeClimbingState { get; private set; }
 	public PlayerRespawnState RespawnState { get; private set; }
 	public PlayerSlideState SlideState { get; private set; }
-	public PlayerWallState WallState { get; private set; }
+	public PlayerWallJumpState WallJumpState { get; private set; }
 	public PlayerGridHangingState GridHangingState { get; private set; }
+	public PlayerWallRunState WallRunState { get; private set; }
 	
 	
 	
@@ -124,12 +133,13 @@ public class PlayerController : MonoBehaviour
 	{
 		Rigidbody = GetComponent<Rigidbody>();
 		Input = GetComponent<InputManager>();
-		LedgeGrab = GetComponent<LedgeGrabPlayerSystem>();
-		SafePositionTracker = GetComponent<SafePositionTrackerPlayerSystem>();
-		Slide = GetComponent<SlidePlayerSystem>();
-		WallInteraction = GetComponent<WallInteractionPlayerSystem>();
-		GridInteraction = GetComponent<GridInteractionPlayerSystem>();
+		LedgeGrabSystem = GetComponent<LedgeGrabPlayerSystem>();
+		SafePositionTrackerSystem = GetComponent<SafePositionTrackerPlayerSystem>();
+		SlideSystem = GetComponent<SlidePlayerSystem>();
+		WallInteractionSystem = GetComponent<WallInteractionPlayerSystem>();
+		GridInteractionSystem = GetComponent<GridInteractionPlayerSystem>();
 		Animator = GetComponent<Animator>();
+		WallRunSystem = GetComponent<WallRunPlayerSystem>();
 		
 		CapsuleCollider = GetComponent<CapsuleCollider>();
 		groundDetector = GetComponentInChildren<GroundDetectorPlayerSystem>();
@@ -146,10 +156,12 @@ public class PlayerController : MonoBehaviour
 		LedgeClimbingState = new PlayerLedgeClimbingState(this, StateMachine);
 		RespawnState = new PlayerRespawnState(this, StateMachine);
 		SlideState = new PlayerSlideState(this, StateMachine);
-		WallState = new PlayerWallState(this, StateMachine);
+		WallJumpState = new PlayerWallJumpState(this, StateMachine);
 		GridHangingState = new PlayerGridHangingState(this, StateMachine);
+		WallRunState = new PlayerWallRunState(this, StateMachine);
 
-		standingHeight = CapsuleCollider.height;
+		defaultColliderHeight = CapsuleCollider.height;
+		defaultColliderCenter = CapsuleCollider.center;
 	}
 
 	
@@ -171,6 +183,15 @@ public class PlayerController : MonoBehaviour
 		#if UNITY_EDITOR
 		currentStateName = StateMachine.CurrentState.GetType().Name;
 		#endif
+
+		if (coyoteTimer > 0f)
+		{
+			coyoteTimer -= Time.deltaTime;
+			if (coyoteTimer <= 0f)
+			{
+				pendingCoyoteJumpAction = null;
+			}
+		}
 		
 		RunTimersUpdate();
 		StateMachine.CurrentState.HandleInput();
@@ -180,18 +201,18 @@ public class PlayerController : MonoBehaviour
 
 	private void RunTimersUpdate()
 	{
-		if (WallInteraction.WallGrabCooldownTimer > 0f) WallInteraction.WallGrabCooldownTimer -= Time.deltaTime;
-		if (WallInteraction.WallJumpInputLockTimer > 0f) WallInteraction.WallJumpInputLockTimer -= Time.deltaTime;
-		if (airCoyoteTimer > 0f) airCoyoteTimer -= Time.deltaTime;
+		if (WallInteractionSystem.WallGrabCooldownTimer > 0f) WallInteractionSystem.WallGrabCooldownTimer -= Time.deltaTime;
+		if (WallInteractionSystem.WallJumpInputLockTimer > 0f) WallInteractionSystem.WallJumpInputLockTimer -= Time.deltaTime;
+		if (coyoteTimer > 0f) coyoteTimer -= Time.deltaTime;
 		if (jumpGraceTimer > 0f) jumpGraceTimer -= Time.deltaTime;
 		
-		if (GridInteraction.GridDropThroughTimer > 0f)
+		if (GridInteractionSystem.GridDropThroughTimer > 0f)
 		{
-			GridInteraction.GridDropThroughTimer -= Time.deltaTime;
+			GridInteractionSystem.GridDropThroughTimer -= Time.deltaTime;
 
-			if (GridInteraction.GridDropThroughTimer <= 0f)
+			if (GridInteractionSystem.GridDropThroughTimer <= 0f)
 			{
-				GridInteraction.IgnoredGridPlatform = null;
+				GridInteractionSystem.IgnoredGridPlatform = null;
 			}
 		}
 	}
@@ -200,7 +221,7 @@ public class PlayerController : MonoBehaviour
 	
 	private void FixedUpdate()
 	{
-		GridInteraction.UpdateGridPlatformCollisions();
+		GridInteractionSystem.UpdateGridPlatformCollisions();
 		StateMachine.CurrentState.PhysicsUpdate();
 	}
 	
@@ -258,7 +279,7 @@ public class PlayerController : MonoBehaviour
 	public void ExecuteJump()
 	{
 		Animator.SetTrigger(animJump);
-		ClearAirCoyoteTime();
+		ClearCoyoteTime();
 		SetPhysicsMaterial(isGrounded: false);
 		
 		float jumpVelocity = Mathf.Sqrt(upForce * -3f * (Physics.gravity.y * gravityScale)) / Rigidbody.mass;
@@ -317,16 +338,25 @@ public class PlayerController : MonoBehaviour
 	
 	
 	
-	public void StartAirCoyoteTime(int? wallDir = 0)
+	public void StartCoyoteTime(System.Action jumpCallback, float customDuration = -1f)
 	{
-		WallInteraction.LastWallDirection = wallDir ?? WallInteraction.LastWallDirection;
-		airCoyoteTimer = airCoyoteDuration;
+		pendingCoyoteJumpAction = jumpCallback;
+		coyoteTimer = customDuration > 0f ? customDuration : coyoteDuration;
 	}
 
 
-	public void ClearAirCoyoteTime()
+	public void ClearCoyoteTime()
 	{
-		airCoyoteTimer = 0f;
+		coyoteTimer = 0f;
+	}
+
+
+
+	public void ConsomeCoyoteJump()
+	{
+		System.Action actionToRun = pendingCoyoteJumpAction;
+		ClearCoyoteTime();
+		actionToRun?.Invoke();
 	}
 
 	
@@ -359,10 +389,10 @@ public class PlayerController : MonoBehaviour
 
 	public void AlignToLedge()
 	{
-		Vector3 hangPosition = LedgeGrab.CurrentLedgeHit.point - (transform.forward * LedgeGrab.WallDistanceOffset);
-		hangPosition.y -= (LedgeGrab.LedgeCheckOrigin.position.y - transform.position.y);
+		Vector3 hangPosition = LedgeGrabSystem.CurrentLedgeHit.point - (transform.forward * LedgeGrabSystem.WallDistanceOffset);
+		hangPosition.y -= (LedgeGrabSystem.LedgeCheckOrigin.position.y - transform.position.y);
 		transform.position = hangPosition;
-		transform.rotation = Quaternion.LookRotation(-LedgeGrab.CurrentWallHit.normal);
+		transform.rotation = Quaternion.LookRotation(-LedgeGrabSystem.CurrentWallHit.normal);
 	}
 	
 	
@@ -390,45 +420,45 @@ public class PlayerController : MonoBehaviour
 	{
 		// Slide checks
 		if (CapsuleCollider == null) CapsuleCollider = GetComponent<CapsuleCollider>();
-		if (Slide == null) Slide = GetComponent<SlidePlayerSystem>();
+		if (SlideSystem == null) SlideSystem = GetComponent<SlidePlayerSystem>();
 		
-		if (CapsuleCollider != null && Slide != null)
+		if (CapsuleCollider != null && SlideSystem != null)
 		{
 			float checkRadius = CapsuleCollider.radius * 0.85f;
 			float minAllowedHeight = CapsuleCollider.radius * 2f;
-			float effectiveSlideHeight = Mathf.Max(Slide.SlidingHeight, minAllowedHeight);
+			float effectiveSlideHeight = Mathf.Max(SlideSystem.SlidingHeight, minAllowedHeight);
 
 			Vector3 bottomSphere = transform.position + Vector3.up * effectiveSlideHeight;
-			Vector3 topSphere = transform.position + Vector3.up * (standingHeight - checkRadius);
+			Vector3 topSphere = transform.position + Vector3.up * (defaultColliderHeight - checkRadius);
 			if (topSphere.y < bottomSphere.y) topSphere = bottomSphere;
 
-			Gizmos.color = Application.isPlaying && !Slide.CanStandUp() ? Color.red : Color.green;
+			Gizmos.color = Application.isPlaying && !SlideSystem.CanStandUp() ? Color.red : Color.green;
 			Gizmos.DrawWireSphere(bottomSphere, checkRadius);
 			Gizmos.DrawWireSphere(topSphere, checkRadius);
 			Gizmos.DrawLine(bottomSphere, topSphere);
 		}
 
 		// Wall check for cling
-		if (WallInteraction == null) WallInteraction = GetComponent<WallInteractionPlayerSystem>();
+		if (WallInteractionSystem == null) WallInteractionSystem = GetComponent<WallInteractionPlayerSystem>();
 		
-		if (WallInteraction != null)
+		if (WallInteractionSystem != null)
 		{
 			Vector3 direction = Vector3.right * FacingDirection;
-			Vector3 upperOrigin = transform.position + Vector3.up * WallInteraction.WallCheckUpperHeight;
-			Vector3 lowerOrigin = transform.position + Vector3.up * WallInteraction.WallCheckLowerHeight;
+			Vector3 upperOrigin = transform.position + Vector3.up * WallInteractionSystem.WallCheckUpperHeight;
+			Vector3 lowerOrigin = transform.position + Vector3.up * WallInteractionSystem.WallCheckLowerHeight;
 
-			Gizmos.color = Application.isPlaying && WallInteraction.IsTouchingWall() ? Color.cyan : Color.yellow;
-			Gizmos.DrawLine(upperOrigin, upperOrigin + direction * WallInteraction.WallCheckDistance);
-			Gizmos.DrawLine(lowerOrigin, lowerOrigin + direction * WallInteraction.WallCheckDistance);
+			Gizmos.color = Application.isPlaying && WallInteractionSystem.IsTouchingWall() ? Color.cyan : Color.yellow;
+			Gizmos.DrawLine(upperOrigin, upperOrigin + direction * WallInteractionSystem.WallCheckDistance);
+			Gizmos.DrawLine(lowerOrigin, lowerOrigin + direction * WallInteractionSystem.WallCheckDistance);
 		}
 		
 		
 		// Grid platform grab check
-		if (GridInteraction == null) GridInteraction = GetComponent<GridInteractionPlayerSystem>();
+		if (GridInteractionSystem == null) GridInteractionSystem = GetComponent<GridInteractionPlayerSystem>();
 		
-		if (CapsuleCollider != null && GridInteraction != null)
+		if (CapsuleCollider != null && GridInteractionSystem != null)
 		{
-			Vector3 grabCenter = transform.position + Vector3.up * GridInteraction.GridHangHandHeight;
+			Vector3 grabCenter = transform.position + Vector3.up * GridInteractionSystem.GridHangHandHeight;
 			Vector3 grabSize = new(CapsuleCollider.radius * 1.6f, 0.4f, 1f);
 
 			Gizmos.color = Color.magenta;

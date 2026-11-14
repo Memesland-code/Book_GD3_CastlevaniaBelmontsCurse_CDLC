@@ -1,3 +1,5 @@
+using UnityEngine;
+
 public class PlayerAirState : PlayerState
 {
 	public PlayerAirState(PlayerController player, PlayerStateMachine stateMachine) : base(player, stateMachine) { }
@@ -13,14 +15,9 @@ public class PlayerAirState : PlayerState
 	{
 		if (player.Input.JumpPressedThisFrame)
 		{
-			if (player.CanWallCoyoteJump)
+			if (player.CanCoyoteJump)
 			{
-				if (player.WallInteraction.LastWallDirection == 0)
-				{
-					player.ExecuteJump();
-					return;
-				}
-				player.WallInteraction.PerformWallJump(player.WallInteraction.LastWallDirection);
+				player.ConsomeCoyoteJump();
 				return;
 			}
 
@@ -28,6 +25,23 @@ public class PlayerAirState : PlayerState
 			{
 				player.ExecuteJump();
 			}
+			/*del
+			if (player.CanCoyoteJump)
+			{
+				if (player.WallInteractionSystem.LastWallDirection == 0)
+				{
+					player.ExecuteJump();
+					return;
+				}
+				player.WallInteractionSystem.PerformWallJump(player.WallInteractionSystem.LastWallDirection);
+				return;
+			}
+
+			if (player.CanJump)
+			{
+				player.ExecuteJump();
+			}
+			*/
 		}
 	}
 
@@ -35,23 +49,31 @@ public class PlayerAirState : PlayerState
 	public override void LogicUpdate()
 	{
 		// Ledge checking during air time
-		if (player.LedgeGrab.CheckForLedge(out _, out _))
+		if (player.LedgeGrabSystem.CheckForLedge(out _, out _))
 		{
 			stateMachine.ChangeState(player.LedgeHangingState);
 			return;
 		}
 		
 		// Grid platform check
-		if (player.GridInteraction.TryGrabGridPlatform(out GridPlatform gridPlatform))
+		if (player.GridInteractionSystem.TryGrabGridPlatform(out GridPlatform gridPlatform))
 		{
-			player.GridInteraction.EnterGridHang(gridPlatform);
+			player.GridInteractionSystem.EnterGridHang(gridPlatform);
+			return;
+		}
+		
+		// Wall run wall check
+		if (player.WallRunSystem.TryDetectWallRun(out int wallRunDir, out RaycastHit wallRunHit))
+		{
+			player.WallRunSystem.BeginWallRun(wallRunDir, wallRunHit);
+			stateMachine.ChangeState(player.WallRunState);
 			return;
 		}
 		
 		// Wall slide check
-		if (player.Rigidbody.linearVelocity.y <= player.WallInteraction.MaxWallGrabUpwardVelocity && player.CanGrabWall && player.WallInteraction.IsTouchingWall())
+		if (player.Rigidbody.linearVelocity.y <= player.WallInteractionSystem.MaxWallGrabUpwardVelocity && player.CanGrabWall && player.WallInteractionSystem.IsTouchingWall())
 		{
-			stateMachine.ChangeState(player.WallState);
+			stateMachine.ChangeState(player.WallJumpState);
 			return;
 		}
 		

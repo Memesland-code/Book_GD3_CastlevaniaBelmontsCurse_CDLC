@@ -39,7 +39,7 @@ public class SlidePlayerSystem : MonoBehaviour
 		float minAllowedHeight = player.CapsuleCollider.radius * 2f;
 		float targetHeight = isSliding
 			? Mathf.Max(slidingHeight, minAllowedHeight)
-			: Mathf.Max(player.StandingHeight, minAllowedHeight);
+			: Mathf.Max(player.DefaultColliderHeight, minAllowedHeight);
 		
 		player.CapsuleCollider.height = targetHeight;
 		player.CapsuleCollider.center = new Vector3(0f, targetHeight * 0.5f, 0f);
@@ -55,7 +55,7 @@ public class SlidePlayerSystem : MonoBehaviour
 		float effectiveSlideHeight = Mathf.Max(slidingHeight, minAllowedHeight);
 		
 		Vector3 bottomSphere = transform.position + Vector3.up * effectiveSlideHeight;
-		Vector3 topSphere = transform.position + Vector3.up * (player.StandingHeight - checkRadius);
+		Vector3 topSphere = transform.position + Vector3.up * (player.DefaultColliderHeight - checkRadius);
 		
 		if (topSphere.y < bottomSphere.y) topSphere = bottomSphere;
 

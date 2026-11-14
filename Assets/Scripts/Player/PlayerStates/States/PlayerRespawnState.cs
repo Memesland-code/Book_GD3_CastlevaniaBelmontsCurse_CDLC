@@ -18,9 +18,9 @@ public class PlayerRespawnState : PlayerState
 		player.Rigidbody.linearVelocity = Vector3.zero;
 		player.Rigidbody.isKinematic = true;
 
-		if (player.SafePositionTracker != null && player.SafePositionTracker.HasValidSafePosition)
+		if (player.SafePositionTrackerSystem != null && player.SafePositionTrackerSystem.HasValidSafePosition)
 		{
-			player.transform.position = player.SafePositionTracker.LastSafePosition + Vector3.up * 0.05f;
+			player.transform.position = player.SafePositionTrackerSystem.LastSafePosition + Vector3.up * 0.05f;
 		}
 	}
 
