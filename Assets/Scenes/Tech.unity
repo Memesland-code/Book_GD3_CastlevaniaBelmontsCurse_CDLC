@@ -119,28 +119,6 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
---- !u!1 &64337287 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 3559878770932076035, guid: 3c378e855123c4c4381b155e94fcc8e8, type: 3}
-  m_PrefabInstance: {fileID: 8710803898978826641}
-  m_PrefabAsset: {fileID: 0}
---- !u!114 &64337290
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 64337287}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f718c7d46631bed42a819d9d07016d5f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::BreakablePlatform
-  breakDelay: 1.5
-  canRespawn: 1
-  respawnDelay: 3
-  visualRoot: {fileID: 1753219312}
-  shakeIntensity: 0.05
 --- !u!1 &201255210
 GameObject:
   m_ObjectHideFlags: 0
@@ -5541,11 +5519,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!4 &1753219312 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 1001481449198495252, guid: 3c378e855123c4c4381b155e94fcc8e8, type: 3}
-  m_PrefabInstance: {fileID: 8710803898978826641}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1876327553
 GameObject:
   m_ObjectHideFlags: 0
@@ -6419,10 +6392,7 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents:
-    - targetCorrespondingSourceObject: {fileID: 3559878770932076035, guid: 3c378e855123c4c4381b155e94fcc8e8, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 64337290}
+    m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 3c378e855123c4c4381b155e94fcc8e8, type: 3}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
