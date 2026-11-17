@@ -12,6 +12,9 @@ public class WhipPlayerSystem : MonoBehaviour
     [Tooltip("Default upwards angle (degrees) when no directionnal movement is hold")]
     [SerializeField] private float neutralAimAngle = 40f;
     [SerializeField] private float whipCooldownDuration = 0.12f;
+    [SerializeField] private float downwardAimAngle = 50f;
+    [Tooltip("Angle pernalty (degrees) applied to downward hooks so upward hooks take priority when both are in range")]
+    [SerializeField] private float downwardAimPenalty = 12f;
 
     [Header("Blocked States")] [PlayerStateSelector] [SerializeField]
     private List<string> blockedStates = new()
@@ -124,26 +127,28 @@ public class WhipPlayerSystem : MonoBehaviour
 
 
 
-	private Vector2 GetAimDirection()
+	private float EvaluateAimAngle(Vector2 hookDir, Vector2 moveInput)
 	{
-		Vector2 moveInput = player.Input != null ? player.Input.Move : Vector2.zero;
-		float rad = neutralAimAngle * Mathf.Deg2Rad;
+		// Explicit vertical input (up/down/diagonal): strict directional aim
+		if (Mathf.Abs(player.Input.Move.y) >= 0.15f)
+		{
+			return Vector2.Angle(player.Input.Move.normalized, hookDir);
+		}
 
-		// Player not aiming -> auto aim with angle
-		if (moveInput.sqrMagnitude <= 0.01f)
-		{
-			return new Vector2(Mathf.Cos(rad) * player.FacingDirection, Mathf.Sin(rad)).normalized;
-		}
-		
-		// Only up/down aim -> keep base angle mixed with Move.x
-		if (Mathf.Abs(moveInput.y) < 0.15f)
-		{
-			float horizontalDir = Mathf.Sign(moveInput.x);
-			return new Vector2(Mathf.Cos(rad) * horizontalDir, Mathf.Sin(rad)).normalized;
-		}
-		
-		// Complete directionnal aiming
-		return moveInput.normalized;
+		// Neutral vertical input: check both forward-up and forward-down cones
+		float horizontalDir = Mathf.Abs(moveInput.x) > 0.05f
+			? Mathf.Sign(moveInput.x)
+			: player.FacingDirection;
+
+		float upRad = neutralAimAngle * Mathf.Deg2Rad;
+		Vector2 upAimDir = new Vector2(Mathf.Cos(upRad) * horizontalDir, Mathf.Sin(upRad)).normalized;
+		float upAngle = Vector2.Angle(upAimDir, hookDir);
+
+		float downRad = downwardAimAngle * Mathf.Deg2Rad;
+		Vector2 downAimDir = new Vector2(Mathf.Cos(downRad) * horizontalDir, -Mathf.Sin(downRad)).normalized;
+		float downAngle = Vector2.Angle(downAimDir, hookDir) + downwardAimPenalty;
+
+		return Mathf.Min(upAngle, downAngle);
 	}
 
 
@@ -161,8 +166,8 @@ public class WhipPlayerSystem : MonoBehaviour
 		}
 
 		Vector3 playerCenter = player.CapsuleCollider.bounds.center;
-		Vector2 aimDir = GetAimDirection();
-
+		Vector2 moveInput = player.Input != null ? player.Input.Move : Vector2.zero;
+		
 		int count = Physics.OverlapSphereNonAlloc(
 			playerCenter,
 			whipRange,
@@ -197,7 +202,7 @@ public class WhipPlayerSystem : MonoBehaviour
 				? maxAimAssistAngle + aimAssistKeepBonusAngle
 				: maxAimAssistAngle;
 
-			float angle = Vector2.Angle(aimDir, toHook2D.normalized);
+			float angle = EvaluateAimAngle(toHook2D.normalized, moveInput);
 			if (angle <= allowedAngle)
 			{
 				// Score combining angular precision (priority) and proximity
