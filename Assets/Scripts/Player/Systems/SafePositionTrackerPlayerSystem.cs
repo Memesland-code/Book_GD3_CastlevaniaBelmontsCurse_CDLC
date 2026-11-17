@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 public class SafePositionTrackerPlayerSystem : MonoBehaviour
@@ -18,9 +19,15 @@ public class SafePositionTrackerPlayerSystem : MonoBehaviour
 
     private float checkTimer;
     private CapsuleCollider capsuleCollider;
+    private PlayerController player;
 
 
-    
+    private void Awake()
+    {
+	    player = GetComponent<PlayerController>();
+    }
+
+
     private void Start()
     {
 	    LastSafePosition = transform.position;
@@ -45,6 +52,8 @@ public class SafePositionTrackerPlayerSystem : MonoBehaviour
 
     private void EvaluateCurrentGround()
     {
+	    if (player.LightHaloSystem != null && !player.LightHaloSystem.IsSafeForRespawn()) return;
+	    
 	    Vector3 centerOrigin = transform.position + Vector3.up * rayOriginHeightOffset;
 	    
 	    // Central Raycast: check under platform is valid

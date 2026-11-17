@@ -261,6 +261,7 @@ Transform:
   - {fileID: 6709844465119777598}
   - {fileID: 7492061745116743060}
   - {fileID: 945660747167355934}
+  - {fileID: 2186138703582912807}
   m_Father: {fileID: 7072037499808599086}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &4553840385421070770
@@ -315,6 +316,7 @@ GameObject:
   - component: {fileID: 3575180392548224476}
   - component: {fileID: 2227831575562963503}
   - component: {fileID: 4271439397561064497}
+  - component: {fileID: 5568871775059173100}
   m_Layer: 3
   m_Name: Player
   m_TagString: Player
@@ -609,7 +611,7 @@ MonoBehaviour:
   hookLayer:
     serializedVersion: 2
     m_Bits: 1024
-  whipRange: 9
+  whipRange: 12
   maxAimAssistAngle: 40
   aimAssistKeepBonusAngle: 10
   neutralAimAngle: 40
@@ -627,9 +629,120 @@ MonoBehaviour:
   purpleWallStopMargin: 0.55
   maxRopeLength: 5
   swingSpeed: 20
-  minHorizontalDropOffset: 0.35
+  swingStartSpeedRatio: 0.35
+  swingAccelerationDuration: 0.25
+  ropeSettleSharpness: 8
   maxSwingUpwardAngle: 70
   yellowExitVelocityMultiplier: 1.15
+--- !u!114 &5568871775059173100
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5052189306663062249}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dd8cda8d864f97844b700895bc3b112f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LightHaloPlayerSystem
+  haloRadius: 2.5
+  lightHaloVisual: {fileID: 2186138703582912807}
+  crushCheckRadiusRatio: 0.65
+  crushCheckVerticalMargin: 0.15
+  blockedStates:
+  - PlayerRespawnState
+  - PlayerLedgeClimbingState
+--- !u!1 &8047925964469708403
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2186138703582912807}
+  - component: {fileID: 7504505450822965051}
+  - component: {fileID: 4681687467455456019}
+  m_Layer: 3
+  m_Name: LightHaloVisual
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2186138703582912807
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8047925964469708403}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 1.2, z: 0}
+  m_LocalScale: {x: 5, y: 5, z: 5}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 8521599512508714356}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!33 &7504505450822965051
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8047925964469708403}
+  m_Mesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!23 &4681687467455456019
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8047925964469708403}
+  m_Enabled: 1
+  m_CastShadows: 1
+  m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: 4a426135954e361458784332506f3a6a, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 0
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_MaskInteraction: 0
+  m_AdditionalVertexStreams: {fileID: 0}
 --- !u!1001 &483686978327742756
 PrefabInstance:
   m_ObjectHideFlags: 0

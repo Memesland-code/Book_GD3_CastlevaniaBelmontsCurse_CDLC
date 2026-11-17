@@ -12,6 +12,7 @@ using UnityEngine;
 [RequireComponent(typeof(GridInteractionPlayerSystem))]
 [RequireComponent(typeof(WallRunPlayerSystem))]
 [RequireComponent(typeof(WhipPlayerSystem))]
+[RequireComponent(typeof(LightHaloPlayerSystem))]
 public class PlayerController : MonoBehaviour
 {
 	public readonly int isRunning = Animator.StringToHash("IsRunning");
@@ -71,6 +72,7 @@ public class PlayerController : MonoBehaviour
 	public GridInteractionPlayerSystem GridInteractionSystem { get; private set; }
 	public WallRunPlayerSystem WallRunSystem { get; private set; }
 	public WhipPlayerSystem WhipSystem { get; private set; }
+	public LightHaloPlayerSystem LightHaloSystem { get; private set; }
 
 	// Jump Settings
 	public float GroundSpeed => groundSpeed;
@@ -152,6 +154,7 @@ public class PlayerController : MonoBehaviour
 		Animator = GetComponent<Animator>();
 		WallRunSystem = GetComponent<WallRunPlayerSystem>();
 		WhipSystem = GetComponent<WhipPlayerSystem>();
+		LightHaloSystem = GetComponent<LightHaloPlayerSystem>();
 		
 		CapsuleCollider = GetComponent<CapsuleCollider>();
 		groundDetector = GetComponentInChildren<GroundDetectorPlayerSystem>();
@@ -430,6 +433,7 @@ public class PlayerController : MonoBehaviour
 	{
 		if (StateMachine.CurrentState == RespawnState) return;
 		
+		LightHaloSystem?.ForceDeactivateWithoutCrushCheck();
 		StateMachine.ChangeState(RespawnState);
 	}
 	

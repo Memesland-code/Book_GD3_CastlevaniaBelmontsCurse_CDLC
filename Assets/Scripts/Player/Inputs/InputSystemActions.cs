@@ -151,6 +151,16 @@ public partial class @PlayerInputActions: IInputActionCollection2, IDisposable
                     ""interactions"": """",
                     ""initialStateCheck"": false,
                     ""priority"": 0
+                },
+                {
+                    ""name"": ""LightHalo"",
+                    ""type"": ""Button"",
+                    ""id"": ""a95e824b-1fa0-4037-ae5d-f19275798d88"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false,
+                    ""priority"": 0
                 }
             ],
             ""bindings"": [
@@ -503,6 +513,28 @@ public partial class @PlayerInputActions: IInputActionCollection2, IDisposable
                     ""processors"": """",
                     ""groups"": "";Gamepad"",
                     ""action"": ""Whip"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""4b51a1ff-d002-4b20-8cee-512f019497de"",
+                    ""path"": ""<Keyboard>/c"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": "";Keyboard&Mouse"",
+                    ""action"": ""LightHalo"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""358f5ab0-204b-470b-970c-4ed80fdde322"",
+                    ""path"": ""<Gamepad>/leftTrigger"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": "";Gamepad"",
+                    ""action"": ""LightHalo"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
                 }
@@ -1106,6 +1138,7 @@ public partial class @PlayerInputActions: IInputActionCollection2, IDisposable
         m_Player_Jump = m_Player.FindAction("Jump", throwIfNotFound: true);
         m_Player_Slide = m_Player.FindAction("Slide", throwIfNotFound: true);
         m_Player_Whip = m_Player.FindAction("Whip", throwIfNotFound: true);
+        m_Player_LightHalo = m_Player.FindAction("LightHalo", throwIfNotFound: true);
         // UI
         m_UI = asset.FindActionMap("UI", throwIfNotFound: true);
         m_UI_Navigate = m_UI.FindAction("Navigate", throwIfNotFound: true);
@@ -1205,6 +1238,7 @@ public partial class @PlayerInputActions: IInputActionCollection2, IDisposable
     private readonly InputAction m_Player_Jump;
     private readonly InputAction m_Player_Slide;
     private readonly InputAction m_Player_Whip;
+    private readonly InputAction m_Player_LightHalo;
     /// <summary>
     /// Provides access to input actions defined in input action map "Player".
     /// </summary>
@@ -1240,6 +1274,10 @@ public partial class @PlayerInputActions: IInputActionCollection2, IDisposable
         /// Provides access to the underlying input action "Player/Whip".
         /// </summary>
         public InputAction @Whip => m_Wrapper.m_Player_Whip;
+        /// <summary>
+        /// Provides access to the underlying input action "Player/LightHalo".
+        /// </summary>
+        public InputAction @LightHalo => m_Wrapper.m_Player_LightHalo;
         /// <summary>
         /// Provides access to the underlying input action map instance.
         /// </summary>
@@ -1284,6 +1322,9 @@ public partial class @PlayerInputActions: IInputActionCollection2, IDisposable
             @Whip.started += instance.OnWhip;
             @Whip.performed += instance.OnWhip;
             @Whip.canceled += instance.OnWhip;
+            @LightHalo.started += instance.OnLightHalo;
+            @LightHalo.performed += instance.OnLightHalo;
+            @LightHalo.canceled += instance.OnLightHalo;
         }
 
         /// <summary>
@@ -1313,6 +1354,9 @@ public partial class @PlayerInputActions: IInputActionCollection2, IDisposable
             @Whip.started -= instance.OnWhip;
             @Whip.performed -= instance.OnWhip;
             @Whip.canceled -= instance.OnWhip;
+            @LightHalo.started -= instance.OnLightHalo;
+            @LightHalo.performed -= instance.OnLightHalo;
+            @LightHalo.canceled -= instance.OnLightHalo;
         }
 
         /// <summary>
@@ -1655,6 +1699,13 @@ public partial class @PlayerInputActions: IInputActionCollection2, IDisposable
         /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
         /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
         void OnWhip(InputAction.CallbackContext context);
+        /// <summary>
+        /// Method invoked when associated input action "LightHalo" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+        /// </summary>
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
+        void OnLightHalo(InputAction.CallbackContext context);
     }
     /// <summary>
     /// Interface to implement callback methods for all input action callbacks associated with input actions defined by "UI" which allows adding and removing callbacks.

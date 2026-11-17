@@ -15,6 +15,8 @@ public class InputManager : MonoBehaviour, PlayerInputActions.IPlayerActions
 	public bool AttackPressedThisFrame { get; private set; }
 
 	public bool SlideJumpCancelAllowed => true;
+	
+	public bool IsLightHaloHeld { get; private set; }
 
 	private void Awake()
 	{
@@ -99,6 +101,18 @@ public class InputManager : MonoBehaviour, PlayerInputActions.IPlayerActions
 		else if (context.canceled)
 		{
 			IsWhipHeld = false;
+		}
+	}
+
+	public void OnLightHalo(InputAction.CallbackContext context)
+	{
+		if (context.started || context.performed)
+		{
+			IsLightHaloHeld = true;
+		}
+		else if (context.canceled)
+		{
+			IsLightHaloHeld = false;
 		}
 	}
 }
