@@ -9,6 +9,10 @@ public class InputManager : MonoBehaviour, PlayerInputActions.IPlayerActions
 	public bool IsJumpHeld { get; private set; }
 	public bool JumpPressedThisFrame { get; private set; }
 	public bool SlidePressedThisFrame { get; private set; }
+	
+	public bool IsWhipHeld { get; private set; }
+	public bool WhipPressedThisFrame { get; private set; }
+	public bool AttackPressedThisFrame { get; private set; }
 
 	public bool SlideJumpCancelAllowed => true;
 
@@ -28,15 +32,18 @@ public class InputManager : MonoBehaviour, PlayerInputActions.IPlayerActions
 		inputActions.Player.Disable();
 	}
 
+	// Consume inputs
 	private void LateUpdate()
 	{
-		JumpPressedThisFrame = false; // Consume jump action at end of frame
+		JumpPressedThisFrame = false;
 		SlidePressedThisFrame = false;
+		WhipPressedThisFrame = false;
+		AttackPressedThisFrame = false;
 	}
 	
 	
 	
-	// ---- Callbacks from IPlayerActions ----
+	//* ---- Callbacks from IPlayerActions ----
 
 	
 	
@@ -48,7 +55,10 @@ public class InputManager : MonoBehaviour, PlayerInputActions.IPlayerActions
 	
 	public void OnAttack(InputAction.CallbackContext context)
 	{
-		//
+		if (context.started)
+		{
+			AttackPressedThisFrame = true;
+		}
 	}
 
 	
@@ -76,6 +86,19 @@ public class InputManager : MonoBehaviour, PlayerInputActions.IPlayerActions
 		if (context.started)
 		{
 			SlidePressedThisFrame = true;
+		}
+	}
+
+	public void OnWhip(InputAction.CallbackContext context)
+	{
+		if (context.started)
+		{
+			WhipPressedThisFrame = true;
+			IsWhipHeld = true;
+		}
+		else if (context.canceled)
+		{
+			IsWhipHeld = false;
 		}
 	}
 }

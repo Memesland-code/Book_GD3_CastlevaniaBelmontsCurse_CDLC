@@ -18,18 +18,6 @@ public class SafePositionTrackerPlayerSystem : MonoBehaviour
 
     private float checkTimer;
     private CapsuleCollider capsuleCollider;
-    /*!
-    private float pivotToFeetOffset;
-    
-    private void Awake()
-    {
-	    capsuleCollider = GetComponent<CapsuleCollider>();
-
-	    if (capsuleCollider != null)
-	    {
-		    pivotToFeetOffset = (capsuleCollider.height * 0.5f) - capsuleCollider.center.y;
-	    }
-    */
 
 
     

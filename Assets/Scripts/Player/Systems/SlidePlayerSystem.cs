@@ -15,8 +15,6 @@ public class SlidePlayerSystem : MonoBehaviour
 	
 	[Header("Hitbox & Ceiling Detection")]
 	[SerializeField] private float slidingHeight = 1f;
-	[Tooltip("Layer of solid walls and ceilings")]
-	[SerializeField] private LayerMask ceilingObstacleLayers;
 
 	public float SlidingHeight => slidingHeight;
 	public float SlideSpeed => slideSpeed;
@@ -63,7 +61,7 @@ public class SlidePlayerSystem : MonoBehaviour
 			bottomSphere,
 			topSphere,
 			checkRadius,
-			ceilingObstacleLayers,
+			player.SolidObstacleLayers,
 			QueryTriggerInteraction.Ignore
 		);
 	}

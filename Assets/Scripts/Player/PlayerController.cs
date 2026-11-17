@@ -11,11 +11,14 @@ using UnityEngine;
 [RequireComponent(typeof(WallInteractionPlayerSystem))]
 [RequireComponent(typeof(GridInteractionPlayerSystem))]
 [RequireComponent(typeof(WallRunPlayerSystem))]
+[RequireComponent(typeof(WhipPlayerSystem))]
 public class PlayerController : MonoBehaviour
 {
 	public readonly int isRunning = Animator.StringToHash("IsRunning");
 	public readonly int animJump = Animator.StringToHash("Jump");
 
+	//* Exposed Settings
+	
 	[Header("Movement Settings")]
 	[SerializeField] private float groundSpeed = 7.5f;
 	[SerializeField] private float airSpeed = 8.5f;
@@ -44,6 +47,11 @@ public class PlayerController : MonoBehaviour
 	[SerializeField] private PhysicsMaterial airMaterial;
 	
 	
+	[Header("Environment & Collisions")]
+	[SerializeField] private LayerMask solidObstacleLayers;
+	public LayerMask SolidObstacleLayers => solidObstacleLayers;
+	
+	
 	
 	//* Internal Components
 	private CinemachineCamera camera;
@@ -62,6 +70,7 @@ public class PlayerController : MonoBehaviour
 	public WallInteractionPlayerSystem WallInteractionSystem { get; private set; }
 	public GridInteractionPlayerSystem GridInteractionSystem { get; private set; }
 	public WallRunPlayerSystem WallRunSystem { get; private set; }
+	public WhipPlayerSystem WhipSystem { get; private set; }
 
 	// Jump Settings
 	public float GroundSpeed => groundSpeed;
@@ -85,15 +94,15 @@ public class PlayerController : MonoBehaviour
 	public bool CanGrabWall => WallInteractionSystem.WallGrabCooldownTimer <= 0f;
 	
 	public bool IsWallJumpInputLocked => WallInteractionSystem.WallJumpInputLockTimer > 0f;
+
+	private float gridGrabLockTimer;
+	public bool IsGridGrabLocked => gridGrabLockTimer > 0f;
 	
-	public bool IsFacingRight => isFacingRight;
 	private bool isFacingRight = true;
+	public bool IsFacingRight => isFacingRight;
 	public int FacingDirection => IsFacingRight ? 1 : -1;
 	
 	public int CurrentWallDirection { get; set; }
-
-	//del public float AirCoyoteTimer { get; set; }
-	//del public float AirCoyoteDuration => airCoyoteDuration;
 	
 	private float jumpGraceTimer;
 	public bool IsJumpGraceActive => jumpGraceTimer > 0f;
@@ -116,6 +125,8 @@ public class PlayerController : MonoBehaviour
 	public PlayerWallJumpState WallJumpState { get; private set; }
 	public PlayerGridHangingState GridHangingState { get; private set; }
 	public PlayerWallRunState WallRunState { get; private set; }
+	public PlayerPurpleHookState PurpleHookState { get; private set; }
+	public PlayerYellowHookState YellowHookState { get; private set; }
 	
 	
 	
@@ -140,6 +151,7 @@ public class PlayerController : MonoBehaviour
 		GridInteractionSystem = GetComponent<GridInteractionPlayerSystem>();
 		Animator = GetComponent<Animator>();
 		WallRunSystem = GetComponent<WallRunPlayerSystem>();
+		WhipSystem = GetComponent<WhipPlayerSystem>();
 		
 		CapsuleCollider = GetComponent<CapsuleCollider>();
 		groundDetector = GetComponentInChildren<GroundDetectorPlayerSystem>();
@@ -159,6 +171,8 @@ public class PlayerController : MonoBehaviour
 		WallJumpState = new PlayerWallJumpState(this, StateMachine);
 		GridHangingState = new PlayerGridHangingState(this, StateMachine);
 		WallRunState = new PlayerWallRunState(this, StateMachine);
+		PurpleHookState = new PlayerPurpleHookState(this, StateMachine);
+		YellowHookState = new PlayerYellowHookState(this, StateMachine);
 
 		defaultColliderHeight = CapsuleCollider.height;
 		defaultColliderCenter = CapsuleCollider.center;
@@ -183,7 +197,25 @@ public class PlayerController : MonoBehaviour
 		#if UNITY_EDITOR
 		currentStateName = StateMachine.CurrentState.GetType().Name;
 		#endif
+		
+		RunTimersUpdate();
+		WhipSystem.TickWhipSystem();
+		
+		StateMachine.CurrentState.HandleInput();
+		StateMachine.CurrentState.LogicUpdate();
+	}
 
+
+	private void RunTimersUpdate()
+	{
+		if (WallInteractionSystem.WallGrabCooldownTimer > 0f) WallInteractionSystem.WallGrabCooldownTimer -= Time.deltaTime;
+		
+		if (WallInteractionSystem.WallJumpInputLockTimer > 0f) WallInteractionSystem.WallJumpInputLockTimer -= Time.deltaTime;
+		
+		if (jumpGraceTimer > 0f) jumpGraceTimer -= Time.deltaTime;
+		
+		if (gridGrabLockTimer > 0f) gridGrabLockTimer -= Time.deltaTime;
+		
 		if (coyoteTimer > 0f)
 		{
 			coyoteTimer -= Time.deltaTime;
@@ -193,23 +225,9 @@ public class PlayerController : MonoBehaviour
 			}
 		}
 		
-		RunTimersUpdate();
-		StateMachine.CurrentState.HandleInput();
-		StateMachine.CurrentState.LogicUpdate();
-	}
-
-
-	private void RunTimersUpdate()
-	{
-		if (WallInteractionSystem.WallGrabCooldownTimer > 0f) WallInteractionSystem.WallGrabCooldownTimer -= Time.deltaTime;
-		if (WallInteractionSystem.WallJumpInputLockTimer > 0f) WallInteractionSystem.WallJumpInputLockTimer -= Time.deltaTime;
-		if (coyoteTimer > 0f) coyoteTimer -= Time.deltaTime;
-		if (jumpGraceTimer > 0f) jumpGraceTimer -= Time.deltaTime;
-		
 		if (GridInteractionSystem.GridDropThroughTimer > 0f)
 		{
 			GridInteractionSystem.GridDropThroughTimer -= Time.deltaTime;
-
 			if (GridInteractionSystem.GridDropThroughTimer <= 0f)
 			{
 				GridInteractionSystem.IgnoredGridPlatform = null;
@@ -393,6 +411,15 @@ public class PlayerController : MonoBehaviour
 		hangPosition.y -= (LedgeGrabSystem.LedgeCheckOrigin.position.y - transform.position.y);
 		transform.position = hangPosition;
 		transform.rotation = Quaternion.LookRotation(-LedgeGrabSystem.CurrentWallHit.normal);
+	}
+	
+	
+	// ---- Utils ----
+
+
+	public void LockGridGrab(float duration)
+	{
+		gridGrabLockTimer = Mathf.Max(gridGrabLockTimer, duration);
 	}
 	
 	

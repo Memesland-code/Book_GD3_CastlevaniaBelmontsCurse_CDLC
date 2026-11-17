@@ -2,7 +2,7 @@ public abstract class PlayerState
 {
 	protected PlayerController player;
 	protected PlayerStateMachine stateMachine;
-
+	
 	protected PlayerState(PlayerController player, PlayerStateMachine stateMachine)
 	{
 		this.player = player;

@@ -77,7 +77,7 @@ public class GridInteractionPlayerSystem : MonoBehaviour
 	public bool TryGrabGridPlatform(out GridPlatform detectedPlatform)
 	{
 		detectedPlatform = null;
-		if (!CanGrabGrid) return false;
+		if (!CanGrabGrid || player.IsGridGrabLocked) return false;
 		
 		Vector3 grabCenter = transform.position + Vector3.up * gridHangHandHeight;
 		Vector3 grabHalfExtents = new Vector3(player.CapsuleCollider.radius * 0.8f, 0.2f, 0.5f);
