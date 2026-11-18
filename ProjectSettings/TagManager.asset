@@ -17,8 +17,8 @@ TagManager:
   - WallRun
   - Hook
   - BreakablePlatform
-  - 
-  - 
+  - Enemy
+  - SwordHitbox
   - 
   - 
   - 

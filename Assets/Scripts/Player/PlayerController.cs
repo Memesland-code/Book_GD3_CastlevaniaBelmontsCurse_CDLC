@@ -14,6 +14,7 @@ using UnityEngine;
 [RequireComponent(typeof(WhipPlayerSystem))]
 [RequireComponent(typeof(LightHaloPlayerSystem))]
 [RequireComponent(typeof(GroundPoundPlayerSystem))]
+[RequireComponent(typeof(PlayerSwordAttackSystem))]
 public class PlayerController : MonoBehaviour
 {
 	public readonly int isRunning = Animator.StringToHash("IsRunning");
@@ -75,6 +76,7 @@ public class PlayerController : MonoBehaviour
 	public WhipPlayerSystem WhipSystem { get; private set; }
 	public LightHaloPlayerSystem LightHaloSystem { get; private set; }
 	public GroundPoundPlayerSystem GroundPoundSystem { get; private set; }
+	public PlayerSwordAttackSystem SwordAttackSystem { get; private set; }
 
 	// Jump Settings
 	public float GroundSpeed => groundSpeed;
@@ -159,6 +161,7 @@ public class PlayerController : MonoBehaviour
 		WhipSystem = GetComponent<WhipPlayerSystem>();
 		LightHaloSystem = GetComponent<LightHaloPlayerSystem>();
 		GroundPoundSystem = GetComponent<GroundPoundPlayerSystem>();
+		SwordAttackSystem = GetComponent<PlayerSwordAttackSystem>();
 		
 		CapsuleCollider = GetComponent<CapsuleCollider>();
 		groundDetector = GetComponentInChildren<GroundDetectorPlayerSystem>();
@@ -211,6 +214,11 @@ public class PlayerController : MonoBehaviour
 		
 		StateMachine.CurrentState.HandleInput();
 		StateMachine.CurrentState.LogicUpdate();
+		
+		if (Input is not null && Input.AttackPressedThisFrame)
+		{
+			SwordAttackSystem.TryAttack();
+		}
 	}
 
 
