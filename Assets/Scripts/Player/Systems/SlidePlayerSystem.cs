@@ -1,4 +1,4 @@
-using System;
+using System.Collections;
 using UnityEngine;
 
 public class SlidePlayerSystem : MonoBehaviour
@@ -34,6 +34,7 @@ public class SlidePlayerSystem : MonoBehaviour
 	public float SlideConstantRatio => slideConstantRatio;
 	
 	private PlayerController player;
+	private Coroutine resetVisualCoroutine;
 
 
 	private void Awake()
@@ -45,40 +46,6 @@ public class SlidePlayerSystem : MonoBehaviour
 			defaultMeshLocalRotation = visualMesh.localRotation;
 			defaultMeshLocalPosition = visualMesh.localPosition;
 		}
-	}
-
-
-	
-	private void Update()
-	{
-		if (visualMesh is null) return;
-		
-		Quaternion targetRot = isSlidingVisual
-			? defaultMeshLocalRotation * Quaternion.Euler(slideLocalRotationEuler)
-			: defaultMeshLocalRotation;
-
-		Vector3 targetPos = isSlidingVisual
-			? defaultMeshLocalPosition + slideLocalPositionOffset
-			: defaultMeshLocalPosition;
-
-		visualMesh.localRotation = Quaternion.Slerp(
-			visualMesh.localRotation,
-			targetRot,
-			visualTransitionSpeed * Time.deltaTime
-		);
-
-		visualMesh.localPosition = Vector3.Lerp(
-			visualMesh.localPosition,
-			targetPos,
-			visualTransitionSpeed * Time.deltaTime
-		);
-	}
-
-
-
-	public void SetSlideVisual(bool sliding)
-	{
-		isSlidingVisual = sliding;
 	}
 
 	
@@ -115,5 +82,99 @@ public class SlidePlayerSystem : MonoBehaviour
 			player.SolidObstacleLayers,
 			QueryTriggerInteraction.Ignore
 		);
+	}
+	
+	
+	
+
+	public void BeginSlideVisual()
+	{
+	    CancelSlideVisualReset();
+	}
+
+	
+	
+	public void TickSlideVisual()
+	{
+	    if (visualMesh == null) return;
+
+	    Quaternion targetRot = defaultMeshLocalRotation * Quaternion.Euler(slideLocalRotationEuler);
+	    Vector3 targetPos = defaultMeshLocalPosition + slideLocalPositionOffset;
+
+	    visualMesh.localRotation = Quaternion.Slerp(
+	        visualMesh.localRotation,
+	        targetRot,
+	        visualTransitionSpeed * Time.deltaTime
+	    );
+
+	    visualMesh.localPosition = Vector3.Lerp(
+	        visualMesh.localPosition,
+	        targetPos,
+	        visualTransitionSpeed * Time.deltaTime
+	    );
+	}
+
+	
+	
+	public void EndSlideVisual()
+	{
+	    if (visualMesh == null) return;
+
+	    CancelSlideVisualReset();
+	    resetVisualCoroutine = StartCoroutine(ResetSlideVisualRoutine());
+	}
+
+	public void CancelSlideVisualReset()
+	{
+	    if (resetVisualCoroutine != null)
+	    {
+	        StopCoroutine(resetVisualCoroutine);
+	        resetVisualCoroutine = null;
+	    }
+	}
+
+	
+	
+	private IEnumerator ResetSlideVisualRoutine()
+	{
+	    while (visualMesh is not null)
+	    {
+	        var currentState = player.StateMachine.CurrentState;
+	        if (currentState != player.SlideState &&
+	            currentState != player.GroundedState &&
+	            currentState != player.AirState)
+	        {
+	            resetVisualCoroutine = null;
+	            yield break;
+	        }
+
+	        if (Quaternion.Angle(visualMesh.localRotation, defaultMeshLocalRotation) <= 0.5f &&
+	            Vector3.Distance(visualMesh.localPosition, defaultMeshLocalPosition) <= 0.005f)
+	        {
+	            break;
+	        }
+
+	        visualMesh.localRotation = Quaternion.Slerp(
+	            visualMesh.localRotation,
+	            defaultMeshLocalRotation,
+	            visualTransitionSpeed * Time.deltaTime
+	        );
+
+	        visualMesh.localPosition = Vector3.Lerp(
+	            visualMesh.localPosition,
+	            defaultMeshLocalPosition,
+	            visualTransitionSpeed * Time.deltaTime
+	        );
+
+	        yield return null;
+	    }
+
+	    if (visualMesh is not null)
+	    {
+	        visualMesh.localRotation = defaultMeshLocalRotation;
+	        visualMesh.localPosition = defaultMeshLocalPosition;
+	    }
+
+	    resetVisualCoroutine = null;
 	}
 }

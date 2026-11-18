@@ -41,8 +41,6 @@ public class WallRunPlayerSystem : MonoBehaviour
 	private float autoGrabTimer;
 	private int blockedWallDir;
 	
-	public bool CanWallRun => grabCooldownTimer <= 0f;
-
 
 	private void Awake()
 	{
@@ -150,6 +148,8 @@ public class WallRunPlayerSystem : MonoBehaviour
 
 	public void BeginWallRun(int wallDir, RaycastHit hit)
 	{
+		player.SlideSystem.CancelSlideVisualReset();
+		
 		player.CurrentWallDirection = wallDir;
 		autoGrabTimer = 0f;
 		blockedWallDir = 0;
