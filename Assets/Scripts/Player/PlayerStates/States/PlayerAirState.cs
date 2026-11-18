@@ -25,23 +25,6 @@ public class PlayerAirState : PlayerState
 			{
 				player.ExecuteJump();
 			}
-			/*del
-			if (player.CanCoyoteJump)
-			{
-				if (player.WallInteractionSystem.LastWallDirection == 0)
-				{
-					player.ExecuteJump();
-					return;
-				}
-				player.WallInteractionSystem.PerformWallJump(player.WallInteractionSystem.LastWallDirection);
-				return;
-			}
-
-			if (player.CanJump)
-			{
-				player.ExecuteJump();
-			}
-			*/
 		}
 	}
 
@@ -75,6 +58,16 @@ public class PlayerAirState : PlayerState
 		{
 			stateMachine.ChangeState(player.WallJumpState);
 			return;
+		}
+		
+		// Ground pound check
+		if (player.Input.JumpPressedThisFrame)
+		{
+			if (player.Input.Move.y < player.GroundPoundSystem.GroundPoundInputThreshold)
+			{
+				stateMachine.ChangeState(player.GroundPoundState);
+				return;
+			}
 		}
 		
 		// Back to ground

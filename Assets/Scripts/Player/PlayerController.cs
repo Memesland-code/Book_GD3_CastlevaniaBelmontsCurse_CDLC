@@ -13,6 +13,7 @@ using UnityEngine;
 [RequireComponent(typeof(WallRunPlayerSystem))]
 [RequireComponent(typeof(WhipPlayerSystem))]
 [RequireComponent(typeof(LightHaloPlayerSystem))]
+[RequireComponent(typeof(GroundPoundPlayerSystem))]
 public class PlayerController : MonoBehaviour
 {
 	public readonly int isRunning = Animator.StringToHash("IsRunning");
@@ -56,15 +57,15 @@ public class PlayerController : MonoBehaviour
 	
 	//* Internal Components
 	private CinemachineCamera camera;
-	private GroundDetectorPlayerSystem groundDetector;
 	public CapsuleCollider CapsuleCollider { get; private set; }
+	public Rigidbody Rigidbody { get; private set; }
 	private RigidbodyConstraints originalConstraints;
 	public Animator Animator { get; private set; }
 	
 	
-	//* Variables Getters for PlayerState
+	//* Player Systems
 	public InputManager Input { get; private set; }
-	public Rigidbody Rigidbody { get; private set; }
+	private GroundDetectorPlayerSystem groundDetector;
 	public LedgeGrabPlayerSystem LedgeGrabSystem { get; private set; }
 	public SafePositionTrackerPlayerSystem SafePositionTrackerSystem { get; private set; }
 	public SlidePlayerSystem SlideSystem { get; private set; }
@@ -73,6 +74,7 @@ public class PlayerController : MonoBehaviour
 	public WallRunPlayerSystem WallRunSystem { get; private set; }
 	public WhipPlayerSystem WhipSystem { get; private set; }
 	public LightHaloPlayerSystem LightHaloSystem { get; private set; }
+	public GroundPoundPlayerSystem GroundPoundSystem { get; private set; }
 
 	// Jump Settings
 	public float GroundSpeed => groundSpeed;
@@ -129,6 +131,7 @@ public class PlayerController : MonoBehaviour
 	public PlayerWallRunState WallRunState { get; private set; }
 	public PlayerPurpleHookState PurpleHookState { get; private set; }
 	public PlayerYellowHookState YellowHookState { get; private set; }
+	public PlayerGroundPoundState GroundPoundState { get; private set; }
 	
 	
 	
@@ -155,6 +158,7 @@ public class PlayerController : MonoBehaviour
 		WallRunSystem = GetComponent<WallRunPlayerSystem>();
 		WhipSystem = GetComponent<WhipPlayerSystem>();
 		LightHaloSystem = GetComponent<LightHaloPlayerSystem>();
+		GroundPoundSystem = GetComponent<GroundPoundPlayerSystem>();
 		
 		CapsuleCollider = GetComponent<CapsuleCollider>();
 		groundDetector = GetComponentInChildren<GroundDetectorPlayerSystem>();
@@ -176,6 +180,7 @@ public class PlayerController : MonoBehaviour
 		WallRunState = new PlayerWallRunState(this, StateMachine);
 		PurpleHookState = new PlayerPurpleHookState(this, StateMachine);
 		YellowHookState = new PlayerYellowHookState(this, StateMachine);
+		GroundPoundState = new PlayerGroundPoundState(this, StateMachine);
 
 		defaultColliderHeight = CapsuleCollider.height;
 		defaultColliderCenter = CapsuleCollider.center;

@@ -1,6 +1,4 @@
-using System;
 using System.Collections.Generic;
-using NUnit.Framework;
 using UnityEngine;
 
 public class LightHaloPlayerSystem : MonoBehaviour
@@ -215,10 +213,8 @@ public class LightHaloPlayerSystem : MonoBehaviour
 		float halfHeight = Mathf.Max(col.height * 0.5f - crushCheckVerticalMargin, radius);
 
 		Vector3 center = col.bounds.center;
-		Vector3 pointBottom = center + Vector3.down * (halfHeight - radius);
-		Vector3 pointTop = center + Vector3.up * (halfHeight - radius);
 
-		IReadOnlyList<LightPlatform> platforms = LightPlatform.ActiveLightPlatforms;
+		var platforms = LightPlatform.ActiveLightPlatforms;
 		for (int i = 0; i < platforms.Count; i++)
 		{
 			LightPlatform platform = platforms[i];
