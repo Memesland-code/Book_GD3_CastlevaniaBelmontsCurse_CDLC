@@ -99,8 +99,6 @@ public class WallRunPlayerSystem : MonoBehaviour
 
 		if (!hasManualInput && !hasAutoGrab) return false;
 		
-		//del if (Mathf.Abs(moveX) < 0.1f) return false;
-
 		// Priority to manual input, else test to jump direction
 		int targetDir = hasManualInput ? (moveX > 0f ? 1 : -1) : player.FacingDirection;
 
@@ -145,7 +143,7 @@ public class WallRunPlayerSystem : MonoBehaviour
 	public bool IsBlockedByCeiling()
 	{
 		Vector3 origin = transform.position + Vector3.up * upperCheckHeight;
-		return Physics.Raycast(origin, Vector3.up, 0.5f, ~0, QueryTriggerInteraction.Ignore);
+		return Physics.Raycast(origin, Vector3.up, 0.5f, player.SolidObstacleLayers, QueryTriggerInteraction.Ignore);
 	}
 
 
