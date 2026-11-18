@@ -12453,6 +12453,11 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2090364901}
   m_Mesh: {fileID: 4300000, guid: cf950e70c5bd1c243aab90ca970f1b6a, type: 2}
+--- !u!4 &2127472054 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 89192121303068367, guid: 7e635b5a072ef8e428b57d1f5103e250, type: 3}
+  m_PrefabInstance: {fileID: 3552865768026552688}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &942513605037538702
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -12618,6 +12623,14 @@ PrefabInstance:
     - target: {fileID: 7072037499808599086, guid: 7e635b5a072ef8e428b57d1f5103e250, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7657737939199034235, guid: 7e635b5a072ef8e428b57d1f5103e250, type: 3}
+      propertyPath: visualMesh
+      value: 
+      objectReference: {fileID: 2127472054}
+    - target: {fileID: 7657737939199034235, guid: 7e635b5a072ef8e428b57d1f5103e250, type: 3}
+      propertyPath: slideLocalPositionOffset.y
+      value: 0.45
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

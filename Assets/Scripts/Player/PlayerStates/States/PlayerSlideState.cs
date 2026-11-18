@@ -20,6 +20,7 @@ public class PlayerSlideState : PlayerState
             : Mathf.Sign(player.transform.right.x);
         
         player.SlideSystem.SetSlideHitbox(isSliding: true);
+        player.SlideSystem.SetSlideVisual(sliding: true);
     }
 
 
@@ -89,5 +90,6 @@ public class PlayerSlideState : PlayerState
     public override void Exit()
     {
         player.SlideSystem.SetSlideHitbox(isSliding: false);
+        player.SlideSystem.SetSlideVisual(sliding: false);
     }
 }

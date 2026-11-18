@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 public class SlidePlayerSystem : MonoBehaviour
@@ -16,6 +17,16 @@ public class SlidePlayerSystem : MonoBehaviour
 	[Header("Hitbox & Ceiling Detection")]
 	[SerializeField] private float slidingHeight = 1f;
 
+	[Header("Visual Slide Tilt")]
+	[SerializeField] private Transform visualMesh;
+	[SerializeField] private Vector3 slideLocalRotationEuler = new(-90f, 0f, 0f);
+	[SerializeField] private Vector3 slideLocalPositionOffset = new(0f, -0.45f, 0f);
+	[SerializeField] private float visualTransitionSpeed = 16f;
+	
+	private Quaternion defaultMeshLocalRotation;
+	private Vector3 defaultMeshLocalPosition;
+	private bool isSlidingVisual;
+	
 	public float SlidingHeight => slidingHeight;
 	public float SlideSpeed => slideSpeed;
 	public float SlideEndSpeed => slideEndSpeed;
@@ -28,6 +39,46 @@ public class SlidePlayerSystem : MonoBehaviour
 	private void Awake()
 	{
 		player = GetComponent<PlayerController>();
+
+		if (visualMesh != null)
+		{
+			defaultMeshLocalRotation = visualMesh.localRotation;
+			defaultMeshLocalPosition = visualMesh.localPosition;
+		}
+	}
+
+
+	
+	private void Update()
+	{
+		if (visualMesh is null) return;
+		
+		Quaternion targetRot = isSlidingVisual
+			? defaultMeshLocalRotation * Quaternion.Euler(slideLocalRotationEuler)
+			: defaultMeshLocalRotation;
+
+		Vector3 targetPos = isSlidingVisual
+			? defaultMeshLocalPosition + slideLocalPositionOffset
+			: defaultMeshLocalPosition;
+
+		visualMesh.localRotation = Quaternion.Slerp(
+			visualMesh.localRotation,
+			targetRot,
+			visualTransitionSpeed * Time.deltaTime
+		);
+
+		visualMesh.localPosition = Vector3.Lerp(
+			visualMesh.localPosition,
+			targetPos,
+			visualTransitionSpeed * Time.deltaTime
+		);
+	}
+
+
+
+	public void SetSlideVisual(bool sliding)
+	{
+		isSlidingVisual = sliding;
 	}
 
 	

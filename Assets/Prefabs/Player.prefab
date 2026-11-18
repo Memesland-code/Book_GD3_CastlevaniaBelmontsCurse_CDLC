@@ -524,6 +524,10 @@ MonoBehaviour:
   slideDuration: 0.35
   slideConstantRatio: 0.4
   slidingHeight: 1
+  visualMesh: {fileID: 89192121303068367}
+  slideLocalRotationEuler: {x: -90, y: 0, z: 0}
+  slideLocalPositionOffset: {x: 0, y: 0.45, z: 0}
+  visualTransitionSpeed: 16
 --- !u!114 &6898517849132983508
 MonoBehaviour:
   m_ObjectHideFlags: 0
