@@ -155,6 +155,7 @@ public class PlayerController : MonoBehaviour
 	public PlayerYellowHookState YellowHookState { get; private set; }
 	public PlayerGroundPoundState GroundPoundState { get; private set; }
 	public PlayerWallWhipState WallWhipState { get; private set; }
+	public PlayerDoorTransitionState DoorTransitionState { get; private set; }
 	
 	
 	
@@ -209,6 +210,7 @@ public class PlayerController : MonoBehaviour
 		YellowHookState = new PlayerYellowHookState(this, StateMachine);
 		GroundPoundState = new PlayerGroundPoundState(this, StateMachine);
 		WallWhipState = new PlayerWallWhipState(this, StateMachine);
+		DoorTransitionState = new PlayerDoorTransitionState(this, StateMachine);
 
 		defaultColliderHeight = CapsuleCollider.height;
 		defaultColliderCenter = CapsuleCollider.center;
@@ -240,7 +242,7 @@ public class PlayerController : MonoBehaviour
 		StateMachine.CurrentState.HandleInput();
 		StateMachine.CurrentState.LogicUpdate();
 		
-		if (Input is not null && Input.AttackPressedThisFrame)
+		if (Input is not null && Input.AttackPressedThisFrame && StateMachine.CurrentState != DoorTransitionState)
 		{
 			SwordAttackSystem.TryAttack();
 		}
@@ -461,6 +463,24 @@ public class PlayerController : MonoBehaviour
 	public void LockGridGrab(float duration)
 	{
 		gridGrabLockTimer = Mathf.Max(gridGrabLockTimer, duration);
+	}
+
+
+
+	public void TeleportTo(Vector3 targetWorldPosition, bool faceRight)
+	{
+		Vector3 previousPos = transform.position;
+		Vector3 destination = new(targetWorldPosition.x, targetWorldPosition.y, previousPos.z);
+		
+		transform.position = destination;
+		Physics.SyncTransforms();
+		
+		SetFacingDirection(faceRight);
+		
+		if (camera != null)
+		{
+			camera.OnTargetObjectWarped(transform, destination - previousPos);
+		}
 	}
 	
 	

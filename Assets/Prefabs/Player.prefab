@@ -555,7 +555,7 @@ MonoBehaviour:
   wallCheckLowerHeight: 0.5
   wallLayers:
     serializedVersion: 2
-    m_Bits: 1
+    m_Bits: 18497
 --- !u!114 &3575180392548224476
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -666,6 +666,7 @@ MonoBehaviour:
   - PlayerRespawnState
   - PlayerLedgeClimbingState
   - PlayerGroundPoundState
+  - PlayerDoorTransitionState
 --- !u!114 &7936877847096739191
 MonoBehaviour:
   m_ObjectHideFlags: 0

@@ -42,7 +42,22 @@ public class BreakingPlatform : MonoBehaviour
 		if (!other.gameObject.TryGetComponent(out PlayerController player)) return;
 		
 		float topSurfaceY = platformCollider.bounds.max.y;
-		if (player.transform.position.y >= topSurfaceY - 0.08f)
+		bool isStandingOnTop = player.transform.position.y >= topSurfaceY - 0.08f;
+
+		bool isClingingToSide = false;
+		if (player.StateMachine.CurrentState == player.WallJumpState)
+		{
+			for (int i = 0; i < other.contactCount; i++)
+			{
+				if (Mathf.Abs(other.GetContact(i).normal.x) > 0.7f)
+				{
+					isClingingToSide = true;
+					break;
+				}
+			}
+		}
+
+		if (isStandingOnTop || isClingingToSide)
 		{
 			StartCoroutine(BreakRoutine());
 		}
@@ -55,7 +70,6 @@ public class BreakingPlatform : MonoBehaviour
 		isTriggered = true;
 		float elapsed = 0f;
 
-		// Delay with visual shaking
 		while (elapsed < breakDelay)
 		{
 			elapsed += Time.deltaTime;
