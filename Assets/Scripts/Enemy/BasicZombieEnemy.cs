@@ -1,10 +1,5 @@
 using UnityEngine;
 
-public interface IDamageable
-{
-    void TakeDamage(int amount);
-}
-
 [RequireComponent(typeof(Rigidbody), typeof(CapsuleCollider))]
 public class BasicZombieEnemy : MonoBehaviour, IDamageable
 {

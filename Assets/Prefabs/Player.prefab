@@ -457,7 +457,7 @@ MonoBehaviour:
   airMaterial: {fileID: 13400000, guid: 10ede9b8ccc6d07498c2468ded23156e, type: 2}
   solidObstacleLayers:
     serializedVersion: 2
-    m_Bits: 2625
+    m_Bits: 19009
   noClip: 0
   currentStateName: 
   enabledGizmos: 0

@@ -19,7 +19,7 @@ TagManager:
   - BreakablePlatform
   - Enemy
   - SwordHitbox
-  - 
+  - BreakableWall
   - 
   - 
   - 

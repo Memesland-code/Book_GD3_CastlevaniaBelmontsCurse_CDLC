@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -37,7 +36,7 @@ public class SwordHitbox : MonoBehaviour
 
 	private void OnTriggerEnter(Collider other)
 	{
-		IDamageable target = other.GetComponent<IDamageable>();
+		IDamageable target = other.GetComponentInParent<IDamageable>();
 		if (target == null || !hitTargetsThisSwing.Add(target)) return;
 		
 		target.TakeDamage(currentDamage);
