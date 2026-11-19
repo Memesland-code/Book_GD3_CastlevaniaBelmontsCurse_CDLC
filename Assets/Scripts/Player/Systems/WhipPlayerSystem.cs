@@ -15,7 +15,7 @@ public class WhipPlayerSystem : MonoBehaviour
     [SerializeField] private float downwardAimAngle = 50f;
     [Tooltip("Angle pernalty (degrees) applied to downward hooks so upward hooks take priority when both are in range")]
     [SerializeField] private float downwardAimPenalty = 12f;
-
+    
     [Header("Blocked States")] [PlayerStateSelector] [SerializeField]
     private List<string> blockedStates = new()
     {
@@ -46,6 +46,10 @@ public class WhipPlayerSystem : MonoBehaviour
 	[Tooltip("Max angle where the character automatically ungrabs the hook (0° = perfectly above)")]
 	[SerializeField] private float maxSwingUpwardAngle = 35f;
 	[SerializeField] private float yellowExitVelocityMultiplier = 1f;
+
+	[Header("Wall Run Whip System")]
+	[SerializeField] private float minWallWhipDistance = 1.15f;
+	[SerializeField] private Transform wallTargetIndicator;
 	
 	private PlayerController player;
 	private readonly Collider[] hitBuffer = new Collider[24];
@@ -58,6 +62,11 @@ public class WhipPlayerSystem : MonoBehaviour
 	
 	public HookTarget CurrentTargetedHook {get; private set;}
 	public HookTarget ActiveHook {get; private set;}
+	
+	public Collider CurrentTargetedWallCollider {get; private set;}
+	public Vector3 CurrentTargetedWallPoint {get; private set;}
+	public Collider ActiveWallCollider {get; private set;}
+	public Vector3 ActiveWallPoint {get; private set;}
 	
 	// Public getters for states
 	public float PurplePullStartSpeed => purplePullStartSpeed;
@@ -80,6 +89,7 @@ public class WhipPlayerSystem : MonoBehaviour
 	{
 		player = GetComponent<PlayerController>();
 		HideRope();
+		if (wallTargetIndicator != null) wallTargetIndicator.gameObject.SetActive(false);
 	}
 
 
@@ -101,7 +111,7 @@ public class WhipPlayerSystem : MonoBehaviour
 			whipCooldownTimer -= Time.deltaTime;
 		}
 
-		UpdateHookDetectionAndHighlights();
+		UpdateTargetDetectionAndHighlights();
 
 		if (player.Input != null && player.Input.WhipPressedThisFrame)
 		{
@@ -123,6 +133,23 @@ public class WhipPlayerSystem : MonoBehaviour
 		if (player.StateMachine?.CurrentState == null) return true;
 		string currentStateName = player.StateMachine.CurrentState.GetType().Name;
 		return blockedStates.Contains(currentStateName);
+	}
+
+
+
+	private Vector2 GetPrimaryAimDirection(Vector2 moveInput)
+	{
+		if (Mathf.Abs(moveInput.y) >= 0.15f)
+		{
+			return moveInput.normalized;
+		}
+
+		float horizontalDir = Mathf.Abs(moveInput.x) > 0.05f
+			? Mathf.Sign(moveInput.x)
+			: player.FacingDirection;
+		
+		float upRad = neutralAimAngle * Mathf.Deg2Rad;
+		return new Vector2(Mathf.Cos(upRad) * horizontalDir, Mathf.Sin(upRad)).normalized;
 	}
 
 
@@ -153,76 +180,190 @@ public class WhipPlayerSystem : MonoBehaviour
 
 
 
-	private void UpdateHookDetectionAndHighlights()
+	private bool TryComputeWallAnchorPoint(Collider wallCol, Vector3 playerCenter, Vector2 moveInput, out Vector3 anchorPoint)
 	{
-		HookTarget previousTargeted = CurrentTargetedHook;
-		currentFrameHooks.Clear();
-		CurrentTargetedHook = null;
+		anchorPoint = Vector3.zero;
 
-		if (IsCurrentStateBlocked())
+		Vector3 closestToPlayer = wallCol.ClosestPoint(playerCenter);
+		// Fallback if collider is a non-convex MeshCollider
+		if (Vector3.SqrMagnitude(closestToPlayer - playerCenter) < 0.0001f)
 		{
-			RefreshHookHighlights();
-			return;
+			closestToPlayer = wallCol.ClosestPointOnBounds(playerCenter);
 		}
+		closestToPlayer.z = playerCenter.z;
 
-		Vector3 playerCenter = player.CapsuleCollider.bounds.center;
-		Vector2 moveInput = player.Input != null ? player.Input.Move : Vector2.zero;
-		
-		int count = Physics.OverlapSphereNonAlloc(
-			playerCenter,
-			whipRange,
-			hitBuffer,
-			hookLayer,
-			QueryTriggerInteraction.Collide
-		);
-		
-		float bestScore = float.MaxValue;
+		float distToWall = Vector2.Distance(playerCenter, closestToPlayer);
+		if (distToWall < minWallWhipDistance || distToWall > whipRange) return false;
 
-		for (int i = 0; i < count; i++)
+		Vector2 primaryAim = GetPrimaryAimDirection(moveInput);
+		Vector3 rayDir3D = new(primaryAim.x, primaryAim.y, 0f);
+
+		if (wallCol.Raycast(new Ray(playerCenter, rayDir3D), out RaycastHit directHit, whipRange))
 		{
-			Collider col = hitBuffer[i];
-			if (col == null) continue;
-			
-			HookTarget hook = col.GetComponentInParent<HookTarget>();
-			if (hook == null) continue;
-			
-			Vector3 toHook3D = hook.AnchorPosition - playerCenter;
-			Vector2 toHook2D = new(toHook3D.x, toHook3D.y);
-			float distance = toHook2D.magnitude;
-			
-			if (distance < 0.05f || distance > whipRange) continue;
-			
-			// Check if any blocking element between player and hook
-			if (Physics.Raycast(playerCenter, toHook3D.normalized, distance, player.SolidObstacleLayers, QueryTriggerInteraction.Ignore)) continue;
-			
-			currentFrameHooks.Add(hook);
-			
-			// Already aimed hook has a better angle to avoid untarget
-			float allowedAngle = (hook == previousTargeted)
-				? maxAimAssistAngle + aimAssistKeepBonusAngle
-				: maxAimAssistAngle;
-
-			float angle = EvaluateAimAngle(toHook2D.normalized, moveInput);
-			if (angle <= allowedAngle)
+			anchorPoint = directHit.point;
+		}
+		else
+		{
+			Vector3 projectedSample = playerCenter + rayDir3D * distToWall;
+			anchorPoint = wallCol.ClosestPoint(projectedSample);
+			if (Vector3.SqrMagnitude(anchorPoint - projectedSample) < 0.0001f)
 			{
-				// Score combining angular precision (priority) and proximity
-				float score = (angle / maxAimAssistAngle) * 0.75f + (distance / whipRange) * 0.25f;
-				if (score < bestScore)
-				{
-					bestScore = score;
-					CurrentTargetedHook = hook;
-				}
+				anchorPoint = wallCol.ClosestPointOnBounds(projectedSample);
 			}
 		}
 
-		RefreshHookHighlights();
+		anchorPoint.z = playerCenter.z;
+
+		Bounds b = wallCol.bounds;
+		if (b.size.y > 1.4f)
+		{
+			anchorPoint.y = Mathf.Clamp(anchorPoint.y, b.min.y + 0.45f, b.max.y - 0.75f);
+		}
+
+		return true;
 	}
 
 
 
-	private void RefreshHookHighlights()
+	#if UNITY_EDITOR
+    private Vector3 debugRejectedPoint;
+    private string debugRejectReason;
+#endif
+
+    private void UpdateTargetDetectionAndHighlights()
+    {
+        HookTarget previousTargetedHook = CurrentTargetedHook;
+        Collider previousTargetedWall = CurrentTargetedWallCollider;
+
+        currentFrameHooks.Clear();
+        CurrentTargetedHook = null;
+        CurrentTargetedWallCollider = null;
+
+#if UNITY_EDITOR
+        debugRejectReason = null;
+#endif
+
+        if (IsCurrentStateBlocked())
+        {
+            RefreshVisualIndicators();
+            return;
+        }
+
+        Vector3 playerCenter = player.CapsuleCollider.bounds.center;
+        Vector2 moveInput = player.Input != null ? player.Input.Move : Vector2.zero;
+        LayerMask wallRunMask = player.WallRunSystem != null ? player.WallRunSystem.WallRunLayer : 0;
+        LayerMask combinedMask = hookLayer | wallRunMask;
+
+        int count = Physics.OverlapSphereNonAlloc(
+            playerCenter,
+            whipRange,
+            hitBuffer,
+            combinedMask,
+            QueryTriggerInteraction.Collide
+        );
+
+        float bestScore = float.MaxValue;
+
+        for (int i = 0; i < count; i++)
+        {
+            Collider col = hitBuffer[i];
+            if (col == null) continue;
+
+            int colLayerBit = 1 << col.gameObject.layer;
+
+            // 1. Standard HookTarget check
+            if ((hookLayer.value & colLayerBit) != 0)
+            {
+                HookTarget hook = col.GetComponentInParent<HookTarget>();
+                if (hook == null) continue;
+
+                Vector3 toHook3D = hook.AnchorPosition - playerCenter;
+                Vector2 toHook2D = new(toHook3D.x, toHook3D.y);
+                float distance = toHook2D.magnitude;
+
+                if (distance < 0.05f || distance > whipRange) continue;
+                if (Physics.Raycast(playerCenter, toHook3D.normalized, distance, player.SolidObstacleLayers, QueryTriggerInteraction.Ignore)) continue;
+
+                currentFrameHooks.Add(hook);
+
+                float allowedAngle = (hook == previousTargetedHook)
+                    ? maxAimAssistAngle + aimAssistKeepBonusAngle
+                    : maxAimAssistAngle;
+
+                float angle = EvaluateAimAngle(toHook2D.normalized, moveInput);
+                if (angle <= allowedAngle)
+                {
+                    float score = (angle / maxAimAssistAngle) * 0.75f + (distance / whipRange) * 0.25f;
+                    if (score < bestScore)
+                    {
+                        bestScore = score;
+                        CurrentTargetedHook = hook;
+                        CurrentTargetedWallCollider = null;
+                    }
+                }
+            }
+            // 2. Wall Run surface check
+            else if (!col.isTrigger && (wallRunMask.value & colLayerBit) != 0)
+            {
+                if (!TryComputeWallAnchorPoint(col, playerCenter, moveInput, out Vector3 anchorPoint))
+                {
+#if UNITY_EDITOR
+                    debugRejectedPoint = col.ClosestPointOnBounds(playerCenter);
+                    debugRejectReason = "Distance hors min/max";
+#endif
+                    continue;
+                }
+
+                Vector3 toWall3D = anchorPoint - playerCenter;
+                Vector2 toWall2D = new(toWall3D.x, toWall3D.y);
+                float distance = toWall2D.magnitude;
+
+                if (distance < minWallWhipDistance || distance > whipRange) continue;
+
+                // Allow hits belonging to the same wall hierarchy (parent/child colliders)
+                if (Physics.Raycast(playerCenter, toWall3D.normalized, out RaycastHit blockHit, distance - 0.05f, player.SolidObstacleLayers, QueryTriggerInteraction.Ignore) &&
+                    blockHit.collider.transform.root != col.transform.root)
+                {
+#if UNITY_EDITOR
+                    debugRejectedPoint = blockHit.point;
+                    debugRejectReason = $"Bloqué par {blockHit.collider.name}";
+#endif
+                    continue;
+                }
+
+                float allowedAngle = (col == previousTargetedWall)
+                    ? maxAimAssistAngle + aimAssistKeepBonusAngle
+                    : maxAimAssistAngle;
+
+                float angle = EvaluateAimAngle(toWall2D.normalized, moveInput);
+                if (angle <= allowedAngle)
+                {
+                    float score = (angle / maxAimAssistAngle) * 0.75f + (distance / whipRange) * 0.25f;
+                    if (score < bestScore)
+                    {
+                        bestScore = score;
+                        CurrentTargetedHook = null;
+                        CurrentTargetedWallCollider = col;
+                        CurrentTargetedWallPoint = anchorPoint;
+                    }
+                }
+#if UNITY_EDITOR
+                else
+                {
+                    debugRejectedPoint = anchorPoint;
+                    debugRejectReason = $"Angle trop grand ({angle:F0}° > {allowedAngle:F0}°)";
+                }
+#endif
+            }
+        }
+
+        RefreshVisualIndicators();
+    }
+
+
+
+	private void RefreshVisualIndicators()
 	{
-		// Turn off out of reach hooks
 		foreach (HookTarget oldHook in activeHighlightedHooks)
 		{
 			if (oldHook != null && !currentFrameHooks.Contains(oldHook))
@@ -230,10 +371,9 @@ public class WhipPlayerSystem : MonoBehaviour
 				oldHook.SetHighlightState(HookHighlightState.None);
 			}
 		}
-		
+
 		activeHighlightedHooks.Clear();
-		
-		// Applies InRange or Targeted to valid hooks
+
 		foreach (HookTarget hook in currentFrameHooks)
 		{
 			activeHighlightedHooks.Add(hook);
@@ -241,23 +381,57 @@ public class WhipPlayerSystem : MonoBehaviour
 				? HookHighlightState.Targeted
 				: HookHighlightState.InRange);
 		}
+
+		if (wallTargetIndicator != null)
+		{
+			bool hasWallTarget = CurrentTargetedWallCollider != null;
+			wallTargetIndicator.gameObject.SetActive(hasWallTarget);
+
+			if (hasWallTarget)
+			{
+				if (wallTargetIndicator is RectTransform rectTransform)
+				{
+					Camera cam = Camera.main;
+					if (cam != null)
+					{
+						rectTransform.position = cam.WorldToScreenPoint(CurrentTargetedWallPoint);
+					}
+				}
+				else
+				{
+					wallTargetIndicator.position = CurrentTargetedWallPoint;
+				}
+			}
+		}
 	}
 
 
 
 	private void TryActivateWhip()
 	{
-		if (whipCooldownTimer > 0f || IsCurrentStateBlocked() || CurrentTargetedHook == null) return;
-		
-		ActiveHook = CurrentTargetedHook;
+		if (whipCooldownTimer > 0f || IsCurrentStateBlocked()) return;
 
-		if (ActiveHook.Type == HookType.Purple)
+		if (CurrentTargetedHook != null)
 		{
-			player.StateMachine.ChangeState(player.PurpleHookState);
+			ActiveHook = CurrentTargetedHook;
+			ActiveWallCollider = null;
+
+			if (ActiveHook.Type == HookType.Purple)
+			{
+				player.StateMachine.ChangeState(player.PurpleHookState);
+			}
+			else if (ActiveHook.Type == HookType.Yellow)
+			{
+				player.StateMachine.ChangeState(player.YellowHookState);
+			}
 		}
-		else if (ActiveHook.Type == HookType.Yellow)
+		else if (CurrentTargetedWallCollider != null)
 		{
-			player.StateMachine.ChangeState(player.YellowHookState);
+			ActiveHook = null;
+			ActiveWallCollider = CurrentTargetedWallCollider;
+			ActiveWallPoint = CurrentTargetedWallPoint;
+
+			player.StateMachine.ChangeState(player.WallWhipState);
 		}
 	}
 
@@ -291,13 +465,39 @@ public class WhipPlayerSystem : MonoBehaviour
 	}
 
 
-
+	
+#if UNITY_EDITOR
 	private void OnDrawGizmosSelected()
 	{
+		PlayerController pc = player != null ? player : GetComponent<PlayerController>();
+		if (pc == null || !pc.IsGizmoEnabled(PlayerDebugGizmos.Whip)) return;
+		
 		CapsuleCollider col = GetComponent<CapsuleCollider>();
 		Vector3 center = col != null ? col.bounds.center : transform.position + Vector3.up;
-		
+
 		Gizmos.color = new Color(0.6f, 0.2f, 1f, 0.35f);
 		Gizmos.DrawWireSphere(center, whipRange);
+
+		if (!Application.isPlaying) return;
+
+		Vector2 moveInput = player != null && player.Input != null ? player.Input.Move : Vector2.zero;
+		Vector2 aimDir = GetPrimaryAimDirection(moveInput);
+		Gizmos.color = Color.cyan;
+		Gizmos.DrawRay(center, new Vector3(aimDir.x, aimDir.y, 0f) * whipRange);
+
+		if (CurrentTargetedWallCollider != null)
+		{
+			Gizmos.color = Color.yellow;
+			Gizmos.DrawLine(center, CurrentTargetedWallPoint);
+			Gizmos.DrawSphere(CurrentTargetedWallPoint, 0.18f);
+		}
+		else if (!string.IsNullOrEmpty(debugRejectReason))
+		{
+			Gizmos.color = Color.red;
+			Gizmos.DrawLine(center, debugRejectedPoint);
+			Gizmos.DrawSphere(debugRejectedPoint, 0.18f);
+			UnityEditor.Handles.Label(debugRejectedPoint + Vector3.up * 0.3f, debugRejectReason);
+#endif
+		}
 	}
 }

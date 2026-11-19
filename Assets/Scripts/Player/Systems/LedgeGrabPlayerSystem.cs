@@ -22,7 +22,7 @@ public class LedgeGrabPlayerSystem : MonoBehaviour
     [SerializeField] private float ledgeReleaseCooldown = 0.5f; // Prevents instant re-grab while dropping
     [SerializeField] private float hangTimerCooldown = 0.2f; // Avoids characters from going off of ledge right immediately after grabbing
     
-    private PlayerController playerController;
+    private PlayerController player;
     private float releaseTimer; // Avoids character from grabbing back ledge immediately after going off
     
     
@@ -43,7 +43,7 @@ public class LedgeGrabPlayerSystem : MonoBehaviour
     
     private void Awake()
     {
-	    playerController = GetComponent<PlayerController>();
+	    player = GetComponent<PlayerController>();
     }
 
 
@@ -79,7 +79,7 @@ public class LedgeGrabPlayerSystem : MonoBehaviour
 	    
 	    // Skip check if on release cooldown or grounded
 	    if (releaseTimer > 0f) return false;
-	    if (playerController != null && playerController.IsGrounded) return false;
+	    if (player != null && player.IsGrounded) return false;
 
 	    int layerMask = ~ignoreLayers;
 	    
@@ -128,8 +128,12 @@ public class LedgeGrabPlayerSystem : MonoBehaviour
     
 
 
+#if UNITY_EDITOR
     private void OnDrawGizmosSelected()
     {
+	    PlayerController pc = player != null ? player : GetComponent<PlayerController>();
+	    if (pc == null || !pc.IsGizmoEnabled(PlayerDebugGizmos.LedgeGrab)) return;
+	    
 	    Gizmos.color = Color.red;
 	    Gizmos.DrawRay(wallCheckOrigin.position, transform.forward * wallCheckDistance);
 
@@ -137,4 +141,5 @@ public class LedgeGrabPlayerSystem : MonoBehaviour
 	    Vector3 ledgeRayStart = ledgeCheckOrigin.position + (transform.forward * wallCheckDistance);
 	    Gizmos.DrawRay(ledgeRayStart, Vector3.down * ledgeCheckDistance);
     }
+#endif
 }

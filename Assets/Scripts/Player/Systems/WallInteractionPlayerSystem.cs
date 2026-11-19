@@ -84,4 +84,22 @@ public class WallInteractionPlayerSystem : MonoBehaviour
 			
 		player.StartWallJumpInputLock();
 	}
+	
+	
+	
+#if UNITY_EDITOR
+	private void OnDrawGizmosSelected()
+	{
+		PlayerController pc = player != null ? player : GetComponent<PlayerController>();
+		if (pc == null || !pc.IsGizmoEnabled(PlayerDebugGizmos.WallInteraction)) return;
+		
+		Vector3 direction = Vector3.right * player.FacingDirection;
+		Vector3 upperOrigin = transform.position + Vector3.up * WallCheckUpperHeight;
+		Vector3 lowerOrigin = transform.position + Vector3.up * WallCheckLowerHeight;
+
+		Gizmos.color = Application.isPlaying && IsTouchingWall() ? Color.cyan : Color.yellow;
+		Gizmos.DrawLine(upperOrigin, upperOrigin + direction * WallCheckDistance);
+		Gizmos.DrawLine(lowerOrigin, lowerOrigin + direction * WallCheckDistance);
+	}
+#endif
 }

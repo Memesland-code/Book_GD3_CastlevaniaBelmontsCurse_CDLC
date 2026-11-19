@@ -134,8 +134,12 @@ public class SafePositionTrackerPlayerSystem : MonoBehaviour
     }
 
 
+#if UNITY_EDITOR
     private void OnDrawGizmosSelected()
     {
+	    PlayerController pc = player != null ? player : GetComponent<PlayerController>();
+	    if (pc == null || !pc.IsGizmoEnabled(PlayerDebugGizmos.SafePositionTracker)) return;
+	    
 	    Vector3 centerOrigin = transform.position + Vector3.up * rayOriginHeightOffset;
 	    Vector3 leftOrigin = centerOrigin + Vector3.left * sideCheckOffset;
 	    Vector3 rightOrigin = centerOrigin + Vector3.right * sideCheckOffset;
@@ -153,4 +157,5 @@ public class SafePositionTrackerPlayerSystem : MonoBehaviour
 		    Gizmos.DrawWireSphere(LastSafePosition, 0.25f);
 	    }
     }
+#endif
 }

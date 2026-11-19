@@ -172,4 +172,23 @@ public class GridInteractionPlayerSystem : MonoBehaviour
 		float moveX = player.Input != null ? player.Input.Move.x : 0f;
 		player.Rigidbody.linearVelocity = new Vector3(moveX * player.GroundSpeed, 0f, 0f);
 	}
+	
+	
+	
+#if UNITY_EDITOR
+	private void OnDrawGizmosSelected()
+	{
+		PlayerController pc = player != null ? player : GetComponent<PlayerController>();
+		if (pc == null || !pc.IsGizmoEnabled(PlayerDebugGizmos.GridInteraction)) return;
+		
+		if (player.CapsuleCollider != null)
+		{
+			Vector3 grabCenter = transform.position + Vector3.up * GridHangHandHeight;
+			Vector3 grabSize = new(player.CapsuleCollider.radius * 1.6f, 0.4f, 1f);
+
+			Gizmos.color = Color.magenta;
+			Gizmos.DrawWireCube(grabCenter, grabSize);
+		}
+	}
+#endif
 }

@@ -8,8 +8,8 @@ public class LightHaloPlayerSystem : MonoBehaviour
 	[SerializeField] private Transform lightHaloVisual;
 
 	[Header("Crush Tolerance")]
-	[UnityEngine.Range(0.2f, 1f)] [SerializeField] private float crushCheckRadiusRatio = 0.65f;
-	[SerializeField] private float crushCheckVerticalMargin = 0.15f;
+	[Range(0.2f, 1f)] [SerializeField] private float crushCheckRadiusRatio = 0.65f;
+	//del [SerializeField] private float crushCheckVerticalMargin = 0.15f;
 	
 	[Header("Blocked States")]
 	[PlayerStateSelector][SerializeField] private List<string> blockedStates = new()
@@ -22,7 +22,7 @@ public class LightHaloPlayerSystem : MonoBehaviour
 	private readonly HashSet<LightPlatform> ignoredPlatforms = new();
 	
 	public bool IsHaloActive { get; private set; }
-	public float HaloRadius => haloRadius;
+	//del public float HaloRadius => haloRadius;
 	public Vector3 HaloCenter => player != null && player.CapsuleCollider != null
 		? player.CapsuleCollider.bounds.center
 		: transform.position + Vector3.up;
@@ -209,10 +209,6 @@ public class LightHaloPlayerSystem : MonoBehaviour
 	private bool IsPlayerCrushedInsideAnyPlatform()
 	{
 		CapsuleCollider col = player.CapsuleCollider;
-		float radius = col.radius * crushCheckRadiusRatio;
-		float halfHeight = Mathf.Max(col.height * 0.5f - crushCheckVerticalMargin, radius);
-
-		Vector3 center = col.bounds.center;
 
 		var platforms = LightPlatform.ActiveLightPlatforms;
 		for (int i = 0; i < platforms.Count; i++)
@@ -307,6 +303,9 @@ public class LightHaloPlayerSystem : MonoBehaviour
 
 	private void OnDrawGizmosSelected()
 	{
+		PlayerController pc = player != null ? player : GetComponent<PlayerController>();
+		if (pc == null || !pc.IsGizmoEnabled(PlayerDebugGizmos.LightHalo)) return;
+		
 		CapsuleCollider col = GetComponent<CapsuleCollider>();
 		Vector3 center = col != null ? col.bounds.center : transform.position + Vector3.up;
 

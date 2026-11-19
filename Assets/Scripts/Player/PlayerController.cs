@@ -2,8 +2,28 @@ using JetBrains.Annotations;
 using Unity.Cinemachine;
 using UnityEngine;
 
-[RequireComponent(typeof(Rigidbody))]
-[RequireComponent(typeof(CapsuleCollider))]
+
+
+[System.Flags]
+public enum PlayerDebugGizmos
+{
+	None				= 0,
+	Slide				= 1 << 0,
+	WallInteraction		= 1 << 1,
+	GridInteraction		= 1 << 2,
+	WallRun				= 1 << 3,
+	Whip				= 1 << 4,
+	LedgeGrab			= 1 << 5,
+	SwordAttack			= 1 << 6,
+	LightHalo			= 1 << 7,
+	SafePositionTracker	= 1 << 8,
+	GroundDetector		= 1 << 9,
+	All					= ~0
+}
+
+
+
+[RequireComponent(typeof(Rigidbody), typeof(CapsuleCollider))]
 [RequireComponent(typeof(InputManager))]
 [RequireComponent(typeof(LedgeGrabPlayerSystem))]
 [RequireComponent(typeof(SafePositionTrackerPlayerSystem))]
@@ -134,6 +154,7 @@ public class PlayerController : MonoBehaviour
 	public PlayerPurpleHookState PurpleHookState { get; private set; }
 	public PlayerYellowHookState YellowHookState { get; private set; }
 	public PlayerGroundPoundState GroundPoundState { get; private set; }
+	public PlayerWallWhipState WallWhipState { get; private set; }
 	
 	
 	
@@ -143,6 +164,9 @@ public class PlayerController : MonoBehaviour
 	#if UNITY_EDITOR
 	[Space(10), Header("Debug")]
 	[SerializeField][UsedImplicitly] private string currentStateName;
+	[SerializeField] private PlayerDebugGizmos enabledGizmos = PlayerDebugGizmos.None;
+
+	public bool IsGizmoEnabled(PlayerDebugGizmos system) => (enabledGizmos & system) != 0;
 	#endif
 
 	
@@ -184,6 +208,7 @@ public class PlayerController : MonoBehaviour
 		PurpleHookState = new PlayerPurpleHookState(this, StateMachine);
 		YellowHookState = new PlayerYellowHookState(this, StateMachine);
 		GroundPoundState = new PlayerGroundPoundState(this, StateMachine);
+		WallWhipState = new PlayerWallWhipState(this, StateMachine);
 
 		defaultColliderHeight = CapsuleCollider.height;
 		defaultColliderCenter = CapsuleCollider.center;
@@ -457,56 +482,5 @@ public class PlayerController : MonoBehaviour
 	private void HandleNoClipMovement()
 	{
 		transform.position += new Vector3(Input.Move.x / 2f, Input.Move.y / 2f, 0f);
-	}
-
-
-	private void OnDrawGizmosSelected()
-	{
-		// Slide checks
-		if (CapsuleCollider == null) CapsuleCollider = GetComponent<CapsuleCollider>();
-		if (SlideSystem == null) SlideSystem = GetComponent<SlidePlayerSystem>();
-		
-		if (CapsuleCollider != null && SlideSystem != null)
-		{
-			float checkRadius = CapsuleCollider.radius * 0.85f;
-			float minAllowedHeight = CapsuleCollider.radius * 2f;
-			float effectiveSlideHeight = Mathf.Max(SlideSystem.SlidingHeight, minAllowedHeight);
-
-			Vector3 bottomSphere = transform.position + Vector3.up * effectiveSlideHeight;
-			Vector3 topSphere = transform.position + Vector3.up * (defaultColliderHeight - checkRadius);
-			if (topSphere.y < bottomSphere.y) topSphere = bottomSphere;
-
-			Gizmos.color = Application.isPlaying && !SlideSystem.CanStandUp() ? Color.red : Color.green;
-			Gizmos.DrawWireSphere(bottomSphere, checkRadius);
-			Gizmos.DrawWireSphere(topSphere, checkRadius);
-			Gizmos.DrawLine(bottomSphere, topSphere);
-		}
-
-		// Wall check for cling
-		if (WallInteractionSystem == null) WallInteractionSystem = GetComponent<WallInteractionPlayerSystem>();
-		
-		if (WallInteractionSystem != null)
-		{
-			Vector3 direction = Vector3.right * FacingDirection;
-			Vector3 upperOrigin = transform.position + Vector3.up * WallInteractionSystem.WallCheckUpperHeight;
-			Vector3 lowerOrigin = transform.position + Vector3.up * WallInteractionSystem.WallCheckLowerHeight;
-
-			Gizmos.color = Application.isPlaying && WallInteractionSystem.IsTouchingWall() ? Color.cyan : Color.yellow;
-			Gizmos.DrawLine(upperOrigin, upperOrigin + direction * WallInteractionSystem.WallCheckDistance);
-			Gizmos.DrawLine(lowerOrigin, lowerOrigin + direction * WallInteractionSystem.WallCheckDistance);
-		}
-		
-		
-		// Grid platform grab check
-		if (GridInteractionSystem == null) GridInteractionSystem = GetComponent<GridInteractionPlayerSystem>();
-		
-		if (CapsuleCollider != null && GridInteractionSystem != null)
-		{
-			Vector3 grabCenter = transform.position + Vector3.up * GridInteractionSystem.GridHangHandHeight;
-			Vector3 grabSize = new(CapsuleCollider.radius * 1.6f, 0.4f, 1f);
-
-			Gizmos.color = Color.magenta;
-			Gizmos.DrawWireCube(grabCenter, grabSize);
-		}
 	}
 }

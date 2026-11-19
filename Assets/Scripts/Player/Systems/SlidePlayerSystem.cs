@@ -177,4 +177,30 @@ public class SlidePlayerSystem : MonoBehaviour
 
 	    resetVisualCoroutine = null;
 	}
+	
+	
+	
+#if UNITY_EDITOR
+	private void OnDrawGizmosSelected()
+	{
+		PlayerController pc = player != null ? player : GetComponent<PlayerController>();
+		if (pc == null || !pc.IsGizmoEnabled(PlayerDebugGizmos.Slide)) return;
+		
+		if (player.CapsuleCollider != null)
+		{
+			float checkRadius = player.CapsuleCollider.radius * 0.85f;
+			float minAllowedHeight = player.CapsuleCollider.radius * 2f;
+			float effectiveSlideHeight = Mathf.Max(SlidingHeight, minAllowedHeight);
+
+			Vector3 bottomSphere = transform.position + Vector3.up * effectiveSlideHeight;
+			Vector3 topSphere = transform.position + Vector3.up * (player.DefaultColliderHeight - checkRadius);
+			if (topSphere.y < bottomSphere.y) topSphere = bottomSphere;
+
+			Gizmos.color = Application.isPlaying && !CanStandUp() ? Color.red : Color.green;
+			Gizmos.DrawWireSphere(bottomSphere, checkRadius);
+			Gizmos.DrawWireSphere(topSphere, checkRadius);
+			Gizmos.DrawLine(bottomSphere, topSphere);
+		}
+	}
+#endif
 }

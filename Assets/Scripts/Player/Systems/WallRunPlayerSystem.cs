@@ -41,6 +41,8 @@ public class WallRunPlayerSystem : MonoBehaviour
 	private float autoGrabTimer;
 	private int blockedWallDir;
 	
+	public LayerMask WallRunLayer => wallRunLayer;
+	
 
 	private void Awake()
 	{
@@ -247,8 +249,12 @@ public class WallRunPlayerSystem : MonoBehaviour
 	}
 
 
+#if UNITY_EDITOR
 	private void OnDrawGizmosSelected()
 	{
+		PlayerController pc = player != null ? player : GetComponent<PlayerController>();
+		if (pc == null || !pc.IsGizmoEnabled(PlayerDebugGizmos.WallRun)) return;
+		
 		int dir = Application.isPlaying && player.CurrentWallDirection != 0 ? player.CurrentWallDirection : 1;
 		Vector3 rayDir = Vector3.right * dir;
 
@@ -261,5 +267,7 @@ public class WallRunPlayerSystem : MonoBehaviour
 		Gizmos.DrawLine(lowerOrigin, lowerOrigin + rayDir * wallCheckDistance);
 
 		Gizmos.color = Color.cyan;
-		Gizmos.DrawLine(endOrigin, endOrigin + rayDir * (wallCheckDistance + 0.15f));	}
+		Gizmos.DrawLine(endOrigin, endOrigin + rayDir * (wallCheckDistance + 0.15f));	
+	}
+#endif
 }
