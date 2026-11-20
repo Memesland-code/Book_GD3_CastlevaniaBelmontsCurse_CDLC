@@ -118,6 +118,33 @@ public class WallRunPlayerSystem : MonoBehaviour
 		
 		return false;
 	}
+	
+	
+	
+	/// <summary>
+	/// Detects a wall run surface without requiring directionnal input (used at end of pruple hook grab)
+	/// </summary>
+	public bool TryDetectWallRunAuto(int wallDir, float extraReach, out RaycastHit wallHit)
+	{
+		wallHit = default;
+		if (wallDir == 0 || player.IsGrounded) return false;
+		
+		float reach = Mathf.Max(wallCheckDistance, extraReach);
+		Vector3 rayDir = Vector3.right * wallDir;
+		Vector3 upperOrigin = transform.position + Vector3.up * upperCheckHeight;
+		Vector3 lowerOrigin = transform.position + Vector3.up * lowerCheckHeight;
+		
+		bool upperHit = Physics.Raycast(upperOrigin, rayDir, out RaycastHit hitInfo, reach, wallRunLayer, QueryTriggerInteraction.Ignore);
+		bool lowerhit = Physics.Raycast(lowerOrigin, rayDir, reach, wallRunLayer, QueryTriggerInteraction.Ignore);
+
+		if (upperHit && lowerhit)
+		{
+			wallHit = hitInfo;
+			return true;
+		}
+
+		return false;
+	}
 
 
 

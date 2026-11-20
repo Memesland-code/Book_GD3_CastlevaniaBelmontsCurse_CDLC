@@ -24,8 +24,8 @@ public class PlayerWallRunState : PlayerState
 			return;
 		}
 		
-		// Down or opposite wall x button pressed -> cancel wall run
-		if (inputY < -0.5f || inputX * wallDir < -0.1f)
+		// Down button pressed -> cancel wall run
+		if (inputY < -0.5f)
 		{
 			player.WallRunSystem.ExecuteDropOff(faceAwayFromWall: false);
 			player.StartCoyoteTime(() => player.WallRunSystem.ExecuteWallRunJump());

@@ -110,6 +110,21 @@ public class PlayerPurpleHookState : PlayerState
 		if (traveledDistance >= totalDistance)
 		{
 			player.transform.position = finalDestination;
+
+			int wallDir = Mathf.Abs(travelDirection.x) > 0.05f
+				? (travelDirection.x > 0 ? 1 : -1)
+				: player.FacingDirection;
+
+			float checkReach = player.WhipSystem.PurpleWallStopMargin + 1f;
+
+			if (player.WallRunSystem != null &&
+			    player.WallRunSystem.TryDetectWallRunAuto(wallDir, checkReach, out RaycastHit wallHit))
+			{
+				stateMachine.ChangeState(player.WallRunState);
+				player.WallRunSystem.BeginWallRun(wallDir, wallHit);
+				return;
+			}
+			
 			stateMachine.ChangeState(player.AirState);
 			return;
 		}

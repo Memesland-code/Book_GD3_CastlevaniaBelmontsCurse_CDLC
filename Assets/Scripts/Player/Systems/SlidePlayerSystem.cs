@@ -177,6 +177,20 @@ public class SlidePlayerSystem : MonoBehaviour
 
 	    resetVisualCoroutine = null;
 	}
+
+
+
+	public void ResetSlideImmediate()
+	{
+		CancelSlideVisualReset();
+		SetSlideHitbox(false);
+
+		if (visualMesh != null)
+		{
+			visualMesh.localRotation = defaultMeshLocalRotation;
+			visualMesh.localPosition = defaultMeshLocalPosition;
+		}
+	}
 	
 	
 	

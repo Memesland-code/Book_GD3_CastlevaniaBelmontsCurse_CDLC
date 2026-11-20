@@ -17,6 +17,8 @@ public class PlayerRespawnState : PlayerState
 
 		player.Rigidbody.linearVelocity = Vector3.zero;
 		player.Rigidbody.isKinematic = true;
+		
+		player.SlideSystem?.ResetSlideImmediate();
 
 		if (player.SafePositionTrackerSystem != null && player.SafePositionTrackerSystem.HasValidSafePosition)
 		{

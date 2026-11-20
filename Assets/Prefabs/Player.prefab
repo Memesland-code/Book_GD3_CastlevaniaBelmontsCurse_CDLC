@@ -639,19 +639,19 @@ MonoBehaviour:
   - PlayerLedgeClimbingState
   whipOrigin: {fileID: 945660747167355934}
   whipLineRenderer: {fileID: 1793461719349471854}
-  purplePullStartSpeed: 40
-  purplePullEndSpeed: 28
-  purpleOvershootDistance: 2.2
+  purplePullStartSpeed: 30
+  purplePullEndSpeed: 10
+  purpleOvershootDistance: 1.8
   purpleExitVelocityMultiplier: 0.5
   postPurpleGridIgnoreDuration: 0.25
   purpleWallStopMargin: 0.55
   maxRopeLength: 4
-  swingSpeed: 20
+  swingSpeed: 18
   swingStartSpeedRatio: 0.35
   swingAccelerationDuration: 0.25
   ropeSettleSharpness: 8
   maxSwingUpwardAngle: 70
-  yellowExitVelocityMultiplier: 1.15
+  yellowExitVelocityMultiplier: 0.9
 --- !u!114 &5568871775059173100
 MonoBehaviour:
   m_ObjectHideFlags: 0

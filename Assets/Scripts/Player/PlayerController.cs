@@ -475,6 +475,8 @@ public class PlayerController : MonoBehaviour
 		Vector3 previousPos = transform.position;
 		Vector3 destination = new(targetWorldPosition.x, targetWorldPosition.y, previousPos.z);
 		
+		SlideSystem.ResetSlideImmediate();
+		
 		transform.position = destination;
 		Physics.SyncTransforms();
 		
