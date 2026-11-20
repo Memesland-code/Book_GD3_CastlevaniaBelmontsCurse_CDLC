@@ -4,6 +4,7 @@ using UnityEngine;
 public class GroundDetectorPlayerSystem : MonoBehaviour
 {
 	[SerializeField] private float distance;
+	[SerializeField] private LayerMask groundLayers;
 
 	private PlayerController player;
 	
@@ -19,7 +20,7 @@ public class GroundDetectorPlayerSystem : MonoBehaviour
 	
 	private void Update()
 	{
-		touched = Physics.Raycast(transform.position + new Vector3(0, 1, 0), Vector3.down, distance + 1f, player.SolidObstacleLayers, QueryTriggerInteraction.Ignore);
+		touched = Physics.Raycast(transform.position + new Vector3(0, 1, 0), Vector3.down, distance + 1f, groundLayers, QueryTriggerInteraction.Ignore);
 	}
 
 	

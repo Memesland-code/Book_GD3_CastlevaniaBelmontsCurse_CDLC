@@ -45,6 +45,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::GroundDetector
   distance: 0.2
+  groundLayers:
+    serializedVersion: 2
+    m_Bits: 19265
   touched: 0
 --- !u!1 &742046001068312451
 GameObject:
@@ -338,7 +341,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: -40.85, y: 0.66, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 0.8, y: 0.8, z: 0.8}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 8521599512508714356}
@@ -459,7 +462,7 @@ MonoBehaviour:
     m_Bits: 19009
   noClip: 0
   currentStateName: 
-  enabledGizmos: 0
+  enabledGizmos: 32
 --- !u!114 &4960311334494505207
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -478,9 +481,13 @@ MonoBehaviour:
   ledgeCheckDistance: 0.5
   ignoreLayers:
     serializedVersion: 2
-    m_Bits: 520
+    m_Bits: 8
+  nonGrabbableLayers:
+    serializedVersion: 2
+    m_Bits: 512
   maxWallAngleY: 0.3
   minLedgeFlatness: 0.7
+  minLedgeDepth: 0.55
   wallDistanceOffset: 0.5
   climbOffset: {x: 0, y: 1.8, z: 0.6}
   climbDuration: 0.15
@@ -632,13 +639,13 @@ MonoBehaviour:
   - PlayerLedgeClimbingState
   whipOrigin: {fileID: 945660747167355934}
   whipLineRenderer: {fileID: 1793461719349471854}
-  purplePullStartSpeed: 50
+  purplePullStartSpeed: 40
   purplePullEndSpeed: 28
   purpleOvershootDistance: 2.2
   purpleExitVelocityMultiplier: 0.5
   postPurpleGridIgnoreDuration: 0.25
   purpleWallStopMargin: 0.55
-  maxRopeLength: 5
+  maxRopeLength: 4
   swingSpeed: 20
   swingStartSpeedRatio: 0.35
   swingAccelerationDuration: 0.25
