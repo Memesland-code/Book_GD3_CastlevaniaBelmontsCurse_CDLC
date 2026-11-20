@@ -153,7 +153,6 @@ public class PlayerController : MonoBehaviour
 	public PlayerPurpleHookState PurpleHookState { get; private set; }
 	public PlayerYellowHookState YellowHookState { get; private set; }
 	public PlayerGroundPoundState GroundPoundState { get; private set; }
-	public PlayerWallWhipState WallWhipState { get; private set; }
 	public PlayerDoorTransitionState DoorTransitionState { get; private set; }
 	
 	
@@ -208,7 +207,6 @@ public class PlayerController : MonoBehaviour
 		PurpleHookState = new PlayerPurpleHookState(this, StateMachine);
 		YellowHookState = new PlayerYellowHookState(this, StateMachine);
 		GroundPoundState = new PlayerGroundPoundState(this, StateMachine);
-		WallWhipState = new PlayerWallWhipState(this, StateMachine);
 		DoorTransitionState = new PlayerDoorTransitionState(this, StateMachine);
 
 		defaultColliderHeight = CapsuleCollider.height;

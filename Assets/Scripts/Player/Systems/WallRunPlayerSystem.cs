@@ -41,8 +41,6 @@ public class WallRunPlayerSystem : MonoBehaviour
 	private float autoGrabTimer;
 	private int blockedWallDir;
 	
-	public LayerMask WallRunLayer => wallRunLayer;
-	
 
 	private void Awake()
 	{

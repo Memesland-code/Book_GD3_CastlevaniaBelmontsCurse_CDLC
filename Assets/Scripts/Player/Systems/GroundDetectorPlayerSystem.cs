@@ -5,13 +5,25 @@ public class GroundDetectorPlayerSystem : MonoBehaviour
 {
 	[SerializeField] private float distance;
 
+	private PlayerController player;
+	
 	public bool touched;
 
-	private void Update()
+
+	private void Awake()
 	{
-		touched = Physics.Raycast(transform.position + new Vector3(0, 1, 0), Vector3.down, distance + 1);
+		player = GetComponentInParent<PlayerController>();
 	}
 
+	
+	
+	private void Update()
+	{
+		touched = Physics.Raycast(transform.position + new Vector3(0, 1, 0), Vector3.down, distance + 1f, player.SolidObstacleLayers, QueryTriggerInteraction.Ignore);
+	}
+
+	
+	
 #if UNITY_EDITOR
 	private void OnDrawGizmosSelected()
 	{

@@ -645,8 +645,6 @@ MonoBehaviour:
   ropeSettleSharpness: 8
   maxSwingUpwardAngle: 70
   yellowExitVelocityMultiplier: 1.15
-  minWallWhipDistance: 1.15
-  wallTargetIndicator: {fileID: 0}
 --- !u!114 &5568871775059173100
 MonoBehaviour:
   m_ObjectHideFlags: 0
