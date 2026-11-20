@@ -9,7 +9,6 @@ public class LightHaloPlayerSystem : MonoBehaviour
 
 	[Header("Crush Tolerance")]
 	[Range(0.2f, 1f)] [SerializeField] private float crushCheckRadiusRatio = 0.65f;
-	//del [SerializeField] private float crushCheckVerticalMargin = 0.15f;
 	
 	[Header("Blocked States")]
 	[PlayerStateSelector][SerializeField] private List<string> blockedStates = new()
@@ -22,7 +21,6 @@ public class LightHaloPlayerSystem : MonoBehaviour
 	private readonly HashSet<LightPlatform> ignoredPlatforms = new();
 	
 	public bool IsHaloActive { get; private set; }
-	//del public float HaloRadius => haloRadius;
 	public Vector3 HaloCenter => player != null && player.CapsuleCollider != null
 		? player.CapsuleCollider.bounds.center
 		: transform.position + Vector3.up;
