@@ -53,8 +53,11 @@ public class PlayerAirState : PlayerState
 			return;
 		}
 		
-		// Wall slide check
-		if (player.Rigidbody.linearVelocity.y <= player.WallInteractionSystem.MaxWallGrabUpwardVelocity && player.CanGrabWall && player.WallInteractionSystem.IsTouchingWall())
+		// Wall interaction check
+		if (player.Rigidbody.linearVelocity.y <= player.WallInteractionSystem.MaxWallGrabUpwardVelocity
+		    && player.CanGrabWall
+		    && player.WallInteractionSystem.IsTouchingWall()
+		    && !player.IsWallJumpInputLocked)
 		{
 			stateMachine.ChangeState(player.WallJumpState);
 			return;

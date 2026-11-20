@@ -20,6 +20,7 @@ public class WallInteractionPlayerSystem : MonoBehaviour
 	[SerializeField] private Vector2 wallJumpForce = new(2f, 4f);
 	[Tooltip("Delay before being able to cling to a wall")]
 	[SerializeField] private float wallGrabCooldownDuration = 0.15f;
+	[SerializeField] private float wallJumpInputLockDuration = 0.16f;
 
 	
 	[Header("Wall Detection for Cling")]
@@ -71,6 +72,9 @@ public class WallInteractionPlayerSystem : MonoBehaviour
 	}
 
 
+	
+	public void StartWallJumpInputLock() => WallJumpInputLockTimer = wallJumpInputLockDuration;
+	
 	public void PerformWallJump(int wallDir)
 	{
 		player.Animator.SetTrigger(player.animJump);
@@ -82,7 +86,8 @@ public class WallInteractionPlayerSystem : MonoBehaviour
 		// Push player up + opposite of wall
 		player.Rigidbody.linearVelocity = new Vector3(jumpAwayDirection * WallJumpForce.x, WallJumpForce.y, 0f);
 			
-		player.StartWallJumpInputLock();
+		StartWallGrabCooldown();
+		StartWallJumpInputLock();
 	}
 	
 	

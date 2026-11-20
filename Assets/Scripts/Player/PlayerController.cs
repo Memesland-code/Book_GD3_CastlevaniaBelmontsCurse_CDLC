@@ -53,7 +53,6 @@ public class PlayerController : MonoBehaviour
 	[Tooltip("Grace windows in which player can still jump after leaving a wall (s)")]
 	[SerializeField] private float coyoteDuration = 0.14f;
 	[Tooltip("Horizontal input ignore time")]
-	[SerializeField] private float wallJumpInputLockDuration = 0.14f;
 	
 	
 	[Space(10), Header("Gravity & Fall")]
@@ -106,7 +105,7 @@ public class PlayerController : MonoBehaviour
 	private float coyoteTimer;
 	private System.Action pendingCoyoteJumpAction;
 	public bool CanCoyoteJump => coyoteTimer > 0f && pendingCoyoteJumpAction != null;
-	public void StartWallJumpInputLock() => WallInteractionSystem.WallJumpInputLockTimer = wallJumpInputLockDuration;
+	public void StartWallJumpInputLock() => WallInteractionSystem.StartWallJumpInputLock();
 
 	// Gravity Related
 	public float GravityScale => gravityScale;
@@ -323,7 +322,7 @@ public class PlayerController : MonoBehaviour
 		{
 			targetFacing = forceFaceRight.Value;
 		}
-		else if (Input != null)
+		else if (Input != null && !IsWallJumpInputLocked)
 		{
 			if (Input.Move.x < -0.01f) targetFacing = false;
 			else if (Input.Move.x > 0.01f) targetFacing = true;
@@ -386,6 +385,12 @@ public class PlayerController : MonoBehaviour
 		if (noClip)
 		{
 			HandleNoClipMovement();
+			return;
+		}
+
+		if (IsWallJumpInputLocked)
+		{
+			Rigidbody.linearVelocity = new Vector3(Rigidbody.linearVelocity.x, Rigidbody.linearVelocity.y, 0f);
 			return;
 		}
 		
