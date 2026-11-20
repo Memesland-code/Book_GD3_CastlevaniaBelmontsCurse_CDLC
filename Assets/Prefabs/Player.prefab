@@ -446,7 +446,6 @@ MonoBehaviour:
   upForce: 4
   maxAirJumpsNumber: 0
   coyoteDuration: 0.14
-  wallJumpInputLockDuration: 0.14
   lowJumpGravityScale: 4.5
   gravityScale: 2.5
   fallGravityScale: 8
@@ -548,8 +547,9 @@ MonoBehaviour:
   initialWallSlideSpeed: 4
   wallSlideAcceleration: 10
   maxWallSlideSpeed: 12
-  wallJumpForce: {x: 10, y: 16.5}
+  wallJumpForce: {x: 15, y: 16.5}
   wallGrabCooldownDuration: 0.15
+  wallJumpInputLockDuration: 0.3
   wallCheckDistance: 0.6
   wallCheckUpperHeight: 1.8
   wallCheckLowerHeight: 0.5
