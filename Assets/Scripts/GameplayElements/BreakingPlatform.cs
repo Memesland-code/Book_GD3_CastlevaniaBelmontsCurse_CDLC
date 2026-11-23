@@ -1,5 +1,7 @@
+using System;
 using System.Collections;
 using UnityEngine;
+using Random = UnityEngine.Random;
 
 [RequireComponent(typeof(BoxCollider))]
 public class BreakingPlatform : MonoBehaviour
@@ -33,6 +35,7 @@ public class BreakingPlatform : MonoBehaviour
 			initialVisualLocalPos = visualRoot.localPosition;
 		}
 	}
+	
 
 
 	private void OnCollisionStay(Collision other)
@@ -45,7 +48,7 @@ public class BreakingPlatform : MonoBehaviour
 		bool isStandingOnTop = player.transform.position.y >= topSurfaceY - 0.08f;
 
 		bool isClingingToSide = false;
-		if (player.StateMachine.CurrentState == player.WallJumpState)
+		if (player.StateMachine.CurrentState == player.WallJumpState || player.StateMachine.CurrentState == player.AirState)
 		{
 			for (int i = 0; i < other.contactCount; i++)
 			{
