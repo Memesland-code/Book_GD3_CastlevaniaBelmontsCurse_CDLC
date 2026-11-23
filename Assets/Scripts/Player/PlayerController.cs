@@ -35,6 +35,7 @@ public enum PlayerDebugGizmos
 [RequireComponent(typeof(LightHaloPlayerSystem))]
 [RequireComponent(typeof(GroundPoundPlayerSystem))]
 [RequireComponent(typeof(PlayerSwordAttackSystem))]
+[RequireComponent(typeof(CameraLookaheadPlayerSystem))]
 public class PlayerController : MonoBehaviour
 {
 	public readonly int isRunning = Animator.StringToHash("IsRunning");
@@ -96,6 +97,7 @@ public class PlayerController : MonoBehaviour
 	public LightHaloPlayerSystem LightHaloSystem { get; private set; }
 	public GroundPoundPlayerSystem GroundPoundSystem { get; private set; }
 	public PlayerSwordAttackSystem SwordAttackSystem { get; private set; }
+	public CameraLookaheadPlayerSystem CameraLookaheadSystem { get; private set; }
 
 	// Jump Settings
 	public float GroundSpeed => groundSpeed;
@@ -185,6 +187,7 @@ public class PlayerController : MonoBehaviour
 		LightHaloSystem = GetComponent<LightHaloPlayerSystem>();
 		GroundPoundSystem = GetComponent<GroundPoundPlayerSystem>();
 		SwordAttackSystem = GetComponent<PlayerSwordAttackSystem>();
+		CameraLookaheadSystem = GetComponent<CameraLookaheadPlayerSystem>();
 		
 		CapsuleCollider = GetComponent<CapsuleCollider>();
 		groundDetector = GetComponentInChildren<GroundDetectorPlayerSystem>();
@@ -484,6 +487,7 @@ public class PlayerController : MonoBehaviour
 		
 		if (camera != null)
 		{
+			CameraLookaheadSystem.ResetLookaheadImmediate();
 			camera.OnTargetObjectWarped(transform, destination - previousPos);
 		}
 	}

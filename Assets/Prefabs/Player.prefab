@@ -324,6 +324,7 @@ GameObject:
   - component: {fileID: 7936877847096739191}
   - component: {fileID: 7205969878915313845}
   - component: {fileID: 1166963077505226701}
+  - component: {fileID: 2509364129291725431}
   m_Layer: 3
   m_Name: Player
   m_TagString: Player
@@ -462,7 +463,7 @@ MonoBehaviour:
     m_Bits: 19009
   noClip: 0
   currentStateName: 
-  enabledGizmos: 32
+  enabledGizmos: 0
 --- !u!114 &4960311334494505207
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -763,6 +764,46 @@ MonoBehaviour:
   activeHitboxDuration: 0.14
   attackCooldown: 0.5
   allowAirAttack: 1
+--- !u!114 &2509364129291725431
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5052189306663062249}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1098cfcbce86f91498bffa603ac237cd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CameraLookaheadPlayerSystem
+  cinemachineCamera: {fileID: 0}
+  lookaheadSharpness: 5.5
+  idleFacingOffsetX: 1.1
+  maxLookaheadX: 3.2
+  maxLookaheadY: 3.5
+  referenceSpeedX: 8.5
+  referenceSpeedY: 16
+  velocityDeadzoneX: 1.2
+  velocityDeadzoneY: 6.5
+  stateOverrides:
+  - stateName: PlayerWallRunState
+    velocityMultiplierX: 0
+    velocityMultiplierY: 0
+    additiveOffset: {x: 0, y: 4}
+    keepIdleFacingOffset: 0
+    customSharpness: -1
+  - stateName: PlayerGroundPoundState
+    velocityMultiplierX: 0
+    velocityMultiplierY: 0.4
+    additiveOffset: {x: 0, y: -3.5}
+    keepIdleFacingOffset: 0
+    customSharpness: -1
+  - stateName: PlayerYellowHookState
+    velocityMultiplierX: 0.25
+    velocityMultiplierY: 0
+    additiveOffset: {x: 0, y: 0}
+    keepIdleFacingOffset: 1
+    customSharpness: -1
 --- !u!1 &7366964183477127894
 GameObject:
   m_ObjectHideFlags: 0

@@ -23,6 +23,7 @@ public class PlayerRespawnState : PlayerState
 		if (player.SafePositionTrackerSystem != null && player.SafePositionTrackerSystem.HasValidSafePosition)
 		{
 			player.transform.position = player.SafePositionTrackerSystem.LastSafePosition + Vector3.up * 0.05f;
+			player.CameraLookaheadSystem.ResetLookaheadImmediate();
 		}
 	}
 
