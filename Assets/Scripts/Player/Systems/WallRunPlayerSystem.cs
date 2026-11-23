@@ -194,6 +194,7 @@ public class WallRunPlayerSystem : MonoBehaviour
 	public void BeginWallRun(int wallDir, RaycastHit hit)
 	{
 		player.SlideSystem.CancelSlideVisualReset();
+		player.WhipSystem?.ClearPostPurpleLowGravity();
 		
 		player.CurrentWallDirection = wallDir;
 		autoGrabTimer = 0f;

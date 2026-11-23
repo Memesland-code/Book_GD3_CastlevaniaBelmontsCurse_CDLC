@@ -647,10 +647,12 @@ MonoBehaviour:
   throwGravityScale: 0.02
   purplePullStartSpeed: 30
   purplePullEndSpeed: 10
-  purpleOvershootDistance: 1.8
+  purpleOvershootDistance: 1
   purpleExitVelocityMultiplier: 0.5
   postPurpleGridIgnoreDuration: 0.25
   purpleWallStopMargin: 0.55
+  postPurpleLowGravityDuration: 0.4
+  postPurpleGravityMultiplier: 0.5
   maxRopeLength: 4
   swingSpeed: 18
   swingStartSpeedRatio: 0.35

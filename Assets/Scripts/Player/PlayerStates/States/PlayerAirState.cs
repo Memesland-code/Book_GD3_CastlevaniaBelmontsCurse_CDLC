@@ -92,16 +92,23 @@ public class PlayerAirState : PlayerState
 		{
 			player.ApplyAirHorizontalMovement(player.AirSpeed);
 		}
+
+		bool hasWallLowGrav = player.WallRunSystem != null && player.WallRunSystem.IsEndOfWallLowGravityActive;
+		bool hasPurpleLoGrav = player.WhipSystem != null && player.WhipSystem.IsPostPurpleLowGravityActive;
 		
 		float activeGravityScale;
 
-		if (player.WallRunSystem != null && player.WallRunSystem.IsEndOfWallLowGravityActive)
+		if (hasWallLowGrav || hasPurpleLoGrav)
 		{
 			float baseScale = player.Rigidbody.linearVelocity.y <= 0f
 				? player.FallGravityScale
 				: player.GravityScale;
+			
+			float multiplier = 1f;
+			if (hasWallLowGrav) multiplier = Mathf.Min(multiplier, player.WallRunSystem.EndOfWallGravityMultiplier);
+			if (hasPurpleLoGrav) multiplier = Mathf.Min(multiplier, player.WhipSystem.PostPurpleGravityMultiplier);
 
-			activeGravityScale = baseScale * player.WallRunSystem.EndOfWallGravityMultiplier;
+			activeGravityScale = baseScale * multiplier;
 		}
 		else if (player.Rigidbody.linearVelocity.y <= 0f)
 		{

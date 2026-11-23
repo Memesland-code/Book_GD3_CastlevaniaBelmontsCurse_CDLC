@@ -142,6 +142,7 @@ public class PlayerPurpleHookState : PlayerState
 		
 		// Avoid from grabbing grid platform
 		player.LockGridGrab(player.WhipSystem.PostPurpleGridIgnoreDuration);
+		player.WhipSystem.StartPostPurpleLowGravity();
 		
 		// Keep exit velocity controlled
 		Vector3 exitVelocity = travelDirection * (player.WhipSystem.PurplePullEndSpeed * player.WhipSystem.PurpleExitVelocityMultiplier);

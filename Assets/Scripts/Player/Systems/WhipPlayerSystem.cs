@@ -38,6 +38,8 @@ public class WhipPlayerSystem : MonoBehaviour
 	[SerializeField] private float purpleExitVelocityMultiplier = 0.35f;
 	[SerializeField] private float postPurpleGridIgnoreDuration = 0.25f;
 	[SerializeField] private float purpleWallStopMargin = 0.55f;
+	[SerializeField] private float postPurpleLowGravityDuration = 0.65f;
+	[SerializeField] private float postPurpleGravityMultiplier = 0.35f;
 
 	[Space(20), Header("Yellow Hook Settings")]
 	[SerializeField] private float maxRopeLength = 5f;
@@ -65,8 +67,14 @@ public class WhipPlayerSystem : MonoBehaviour
 
 	private float throwDistance;
 	private float throwTraveled;
+	private float postPurpleLowGravityTimer;
 	
 	public bool IsThrowing { get; private set; }
+	public bool IsPostPurpleLowGravityActive => postPurpleLowGravityTimer > 0f;
+	public float PostPurpleGravityMultiplier => postPurpleGravityMultiplier;
+
+	public void StartPostPurpleLowGravity() => postPurpleLowGravityTimer = postPurpleLowGravityDuration;
+	public void ClearPostPurpleLowGravity() => postPurpleLowGravityTimer = 0f;
 	
 	// Public getters for states
 	public float PurplePullStartSpeed => purplePullStartSpeed;
@@ -114,6 +122,11 @@ public class WhipPlayerSystem : MonoBehaviour
 		if (whipCooldownTimer > 0f)
 		{
 			whipCooldownTimer -= Time.deltaTime;
+		}
+
+		if (postPurpleLowGravityTimer > 0f)
+		{
+			postPurpleLowGravityTimer -= Time.deltaTime;
 		}
 
 		if (IsThrowing)
