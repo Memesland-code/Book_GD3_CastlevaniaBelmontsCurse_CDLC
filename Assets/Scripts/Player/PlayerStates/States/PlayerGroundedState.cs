@@ -15,6 +15,8 @@ public class PlayerGroundedState : PlayerState
     
     public override void HandleInput()
     {
+	    if (player.WhipSystem.IsThrowing) return;
+	    
 	    if (player.Input.Move.x is < -0.1f or > 0.1f)
 	    {
 		    if (!player.Animator.GetBool(player.isRunning))
@@ -58,6 +60,8 @@ public class PlayerGroundedState : PlayerState
 
     public override void LogicUpdate()
     {
+	    if (player.WhipSystem.IsThrowing) return;
+	    
 	    if (player.SafePositionTrackerSystem != null)
 	    {
 		    player.SafePositionTrackerSystem.TickTracker();

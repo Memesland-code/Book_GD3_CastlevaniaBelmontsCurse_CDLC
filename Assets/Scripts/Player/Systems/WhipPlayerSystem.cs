@@ -23,9 +23,13 @@ public class WhipPlayerSystem : MonoBehaviour
 	    nameof(PlayerLedgeClimbingState)
     };
     
-    [Header("Visual Rope (LineRenderer)")]
+    [Header("Visual Rope & Throw Settings")]
     [SerializeField] private Transform whipOrigin;
     [SerializeField] private LineRenderer whipLineRenderer;
+    [SerializeField] private float whipThrowSpeed = 65f;
+    [Tooltip("How fast player velocity is damped to zero during the throw")]
+    [SerializeField] private float throwVelocityDamping = 28f;
+    [SerializeField] private float throwGravityScale = 0.02f;
     
     [Space(20), Header("Purple Hook Settings")]
     [SerializeField] private float purplePullStartSpeed = 28f;
@@ -58,6 +62,11 @@ public class WhipPlayerSystem : MonoBehaviour
 	
 	public HookTarget CurrentTargetedHook {get; private set;}
 	public HookTarget ActiveHook {get; private set;}
+
+	private float throwDistance;
+	private float throwTraveled;
+	
+	public bool IsThrowing { get; private set; }
 	
 	// Public getters for states
 	public float PurplePullStartSpeed => purplePullStartSpeed;
@@ -87,6 +96,12 @@ public class WhipPlayerSystem : MonoBehaviour
 	{
 		if (isRopeVisible && whipLineRenderer is not null && whipOrigin is not null)
 		{
+			if (IsThrowing && ActiveHook is not null)
+			{
+				float t = throwDistance > 0.001f ? Mathf.Clamp01(throwTraveled / throwDistance) : 1f;
+				currentRopeTargetPos = Vector3.Lerp(whipOrigin.position, ActiveHook.AnchorPosition, t);
+			}
+			
 			whipLineRenderer.SetPosition(0, whipOrigin.position);
 			whipLineRenderer.SetPosition(1, currentRopeTargetPos);
 		}
@@ -101,11 +116,56 @@ public class WhipPlayerSystem : MonoBehaviour
 			whipCooldownTimer -= Time.deltaTime;
 		}
 
+		if (IsThrowing)
+		{
+			if (ActiveHook is null || IsCurrentStateBlocked())
+			{
+				CancelThrow();
+				return;
+			}
+
+			throwTraveled += whipThrowSpeed * Time.deltaTime;
+
+			if (throwTraveled >= throwDistance)
+			{
+				IsThrowing = false;
+				currentRopeTargetPos = ActiveHook.AnchorPosition;
+
+				if (ActiveHook.Type == HookType.Purple)
+				{
+					player.StateMachine.ChangeState(player.PurpleHookState);
+				}
+				else if (ActiveHook.Type == HookType.Yellow)
+				{
+					player.StateMachine.ChangeState(player.YellowHookState);
+				}
+			}
+
+			return;
+		}
+
 		UpdateTargetDetectionAndHighlights();
 
 		if (player.Input != null && player.Input.WhipPressedThisFrame)
 		{
 			TryActivateWhip();
+		}
+	}
+
+
+
+	public void FixedTickThrowPhysics()
+	{
+		if (!IsThrowing || player.Rigidbody == null || player.Rigidbody.isKinematic) return;
+
+		float dampT = 1f - Mathf.Exp(-throwVelocityDamping * Time.fixedDeltaTime);
+		Vector3 dampedVel = Vector3.Lerp(player.Rigidbody.linearVelocity, Vector3.zero, dampT);
+		dampedVel.z = 0f;
+		player.Rigidbody.linearVelocity = dampedVel;
+
+		if (throwGravityScale > 0f)
+		{
+			player.Rigidbody.AddForce(Physics.gravity * (throwGravityScale * player.Rigidbody.mass));
 		}
 	}
 
@@ -245,15 +305,30 @@ public class WhipPlayerSystem : MonoBehaviour
 		if (whipCooldownTimer > 0f || IsCurrentStateBlocked() || CurrentTargetedHook == null) return;
 
 		ActiveHook = CurrentTargetedHook;
+		IsThrowing = true;
+		
+		Vector3 origin = whipOrigin != null ? whipOrigin.position : player.CapsuleCollider.bounds.center;
+		throwDistance = Vector3.Distance(origin, ActiveHook.AnchorPosition);
+		throwTraveled = 0f;
 
-		if (ActiveHook.Type == HookType.Purple)
+		float dx = ActiveHook.AnchorPosition.x - player.transform.position.x;
+		if (Mathf.Abs(dx) > 0.05f)
 		{
-			player.StateMachine.ChangeState(player.PurpleHookState);
+			player.SetFacingDirection(dx > 0f);
 		}
-		else if (ActiveHook.Type == HookType.Yellow)
-		{
-			player.StateMachine.ChangeState(player.YellowHookState);
-		}
+		
+		ShowRope(origin);
+	}
+
+
+
+	public void CancelThrow()
+	{
+		if (!IsThrowing) return;
+		
+		IsThrowing = false;
+		ActiveHook = null;
+		HideRope();
 	}
 
 

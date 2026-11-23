@@ -283,6 +283,7 @@ public class PlayerController : MonoBehaviour
 	private void FixedUpdate()
 	{
 		GridInteractionSystem.UpdateGridPlatformCollisions();
+		WhipSystem.FixedTickThrowPhysics();
 		StateMachine.CurrentState.PhysicsUpdate();
 	}
 	
@@ -297,7 +298,7 @@ public class PlayerController : MonoBehaviour
 	
 	public void ApplyHorizontalMovement(float speed)
 	{
-		if (Input == null || Rigidbody == null) return;
+		if (Input == null || Rigidbody == null || WhipSystem.IsThrowing) return;
 		
 		if (noClip)
 		{
@@ -361,7 +362,7 @@ public class PlayerController : MonoBehaviour
 	
 	public void ApplyGravityForce(float scale)
 	{
-		if (Rigidbody.isKinematic) return;
+		if (Rigidbody.isKinematic || WhipSystem.IsThrowing) return;
 		Rigidbody.AddForce(Physics.gravity * ((scale - 1f) * Rigidbody.mass));
 	}
 
@@ -381,7 +382,7 @@ public class PlayerController : MonoBehaviour
 
 	public void ApplyAirHorizontalMovement(float maxAirSpeed)
 	{
-		if (Input == null || Rigidbody == null) return;
+		if (Input == null || Rigidbody == null || WhipSystem.IsThrowing) return;
 
 		if (noClip)
 		{
@@ -479,6 +480,7 @@ public class PlayerController : MonoBehaviour
 		Vector3 destination = new(targetWorldPosition.x, targetWorldPosition.y, previousPos.z);
 		
 		SlideSystem.ResetSlideImmediate();
+		WhipSystem.CancelThrow();
 		
 		transform.position = destination;
 		Physics.SyncTransforms();

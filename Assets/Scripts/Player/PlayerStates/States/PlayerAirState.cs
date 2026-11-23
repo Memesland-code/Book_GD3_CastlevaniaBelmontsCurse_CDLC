@@ -31,6 +31,8 @@ public class PlayerAirState : PlayerState
 
 	public override void LogicUpdate()
 	{
+		if (player.WhipSystem.IsThrowing) return;
+		
 		// Ledge checking during air time
 		if (player.LedgeGrabSystem.CheckForLedge(out _, out _))
 		{

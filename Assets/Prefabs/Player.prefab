@@ -642,6 +642,9 @@ MonoBehaviour:
   - PlayerLedgeClimbingState
   whipOrigin: {fileID: 945660747167355934}
   whipLineRenderer: {fileID: 1793461719349471854}
+  whipThrowSpeed: 45
+  throwVelocityDamping: 28
+  throwGravityScale: 0.02
   purplePullStartSpeed: 30
   purplePullEndSpeed: 10
   purpleOvershootDistance: 1.8
