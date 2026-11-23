@@ -91,6 +91,13 @@ public class WallRunPlayerSystem : MonoBehaviour
 
 
 
+	public void StartChainAutoGrab()
+	{
+		autoGrabTimer = chainAutoGrabDuration;
+	}
+
+
+
 	/// <summary>
 	/// Checks from AirState if player touches a wall & holds input towards wall
 	/// Both upward and downward raycasts prevent activation if character is walking above the wall

@@ -88,6 +88,7 @@ public class WallInteractionPlayerSystem : MonoBehaviour
 			
 		StartWallGrabCooldown();
 		StartWallJumpInputLock();
+		player.WallRunSystem?.StartChainAutoGrab();
 	}
 	
 	
