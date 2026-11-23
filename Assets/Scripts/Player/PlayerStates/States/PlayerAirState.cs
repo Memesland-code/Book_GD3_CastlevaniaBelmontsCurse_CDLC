@@ -93,7 +93,15 @@ public class PlayerAirState : PlayerState
 		
 		float activeGravityScale;
 
-		if (player.Rigidbody.linearVelocity.y <= 0f)
+		if (player.WallRunSystem != null && player.WallRunSystem.IsEndOfWallLowGravityActive)
+		{
+			float baseScale = player.Rigidbody.linearVelocity.y <= 0f
+				? player.FallGravityScale
+				: player.GravityScale;
+
+			activeGravityScale = baseScale * player.WallRunSystem.EndOfWallGravityMultiplier;
+		}
+		else if (player.Rigidbody.linearVelocity.y <= 0f)
 		{
 			activeGravityScale = player.FallGravityScale;
 		}

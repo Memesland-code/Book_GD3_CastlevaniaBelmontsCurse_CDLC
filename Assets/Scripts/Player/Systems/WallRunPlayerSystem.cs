@@ -30,6 +30,8 @@ public class WallRunPlayerSystem : MonoBehaviour
 	[SerializeField] private Vector2 wallRunJumpForce = new(9f, 13f);
 	[Tooltip("Automatic height jump on wall end")]
 	[SerializeField] private float endOfWallUpwardBoost = 8.5f;
+	[SerializeField] private float endOfWallGravityDuration = 0.55f;
+	[SerializeField] private float endOfWallGravityMultiplier = 0.45f;
 	[Tooltip("The time window in which the character can auto run wall after a jump (s)")]
 	[SerializeField] private float chainAutoGrabDuration = 0.55f;
 
@@ -40,6 +42,10 @@ public class WallRunPlayerSystem : MonoBehaviour
 
 	private float autoGrabTimer;
 	private int blockedWallDir;
+	private float lowGravityTimer;
+	
+	public bool IsEndOfWallLowGravityActive => lowGravityTimer > 0f;
+	public float EndOfWallGravityMultiplier => endOfWallGravityMultiplier;
 	
 
 	private void Awake()
@@ -68,6 +74,11 @@ public class WallRunPlayerSystem : MonoBehaviour
 		if (autoGrabTimer > 0f)
 		{
 			autoGrabTimer -= Time.deltaTime;
+		}
+
+		if (lowGravityTimer > 0f)
+		{
+			lowGravityTimer -= Time.deltaTime;
 		}
 	}
 
@@ -253,6 +264,8 @@ public class WallRunPlayerSystem : MonoBehaviour
 	{
 		EndWallRun();
 		StartGrabCooldown();
+
+		lowGravityTimer = endOfWallGravityDuration;
 		
 		player.SetFacingDirection(player.CurrentWallDirection > 0);
 		player.Rigidbody.linearVelocity = new Vector3(0f, endOfWallUpwardBoost, 0f);

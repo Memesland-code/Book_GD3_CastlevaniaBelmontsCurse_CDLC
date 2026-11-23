@@ -612,6 +612,8 @@ MonoBehaviour:
   visualRoot: {fileID: 89192121303068367}
   wallRunJumpForce: {x: 23, y: 14}
   endOfWallUpwardBoost: 27
+  endOfWallGravityDuration: 0.25
+  endOfWallGravityMultiplier: 0.85
   chainAutoGrabDuration: 0.55
 --- !u!114 &4271439397561064497
 MonoBehaviour:
