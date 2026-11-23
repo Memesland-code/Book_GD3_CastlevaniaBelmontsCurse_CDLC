@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
 
+[DefaultExecutionOrder(-5)]
 public class InputManager : MonoBehaviour, PlayerInputActions.IPlayerActions
 {
 	private PlayerInputActions inputActions;
@@ -114,5 +115,10 @@ public class InputManager : MonoBehaviour, PlayerInputActions.IPlayerActions
 		{
 			IsLightHaloHeld = false;
 		}
+	}
+
+	public void OnPauseMenu(InputAction.CallbackContext context)
+	{
+		return;
 	}
 }

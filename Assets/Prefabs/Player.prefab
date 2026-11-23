@@ -445,6 +445,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 40d1680cdb2efa546970b34908a40f9c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerController
+  gameUIPrefab: {fileID: 5316165667363538398, guid: 6c461ac4d067d74449d643a92e2beee3, type: 3}
   groundSpeed: 7.5
   airSpeed: 8.5
   upForce: 4

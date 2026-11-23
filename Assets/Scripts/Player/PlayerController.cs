@@ -42,6 +42,9 @@ public class PlayerController : MonoBehaviour
 	public readonly int animJump = Animator.StringToHash("Jump");
 
 	//* Exposed Settings
+
+	[Header("UI")]
+	[SerializeField] private GameUIRoot gameUIPrefab;
 	
 	[Header("Movement Settings")]
 	[SerializeField] private float groundSpeed = 7.5f;
@@ -139,6 +142,8 @@ public class PlayerController : MonoBehaviour
 	private Vector3 defaultColliderCenter;
 	public Vector3 DefaultColliderCenter => defaultColliderCenter;
 	
+	public GameUIRoot UIRoot { get; private set; }
+	
 
 	
 	//* State Machine & states instances (FSM)
@@ -174,6 +179,16 @@ public class PlayerController : MonoBehaviour
 
 	private void Awake()
 	{
+		if (GameUIRoot.Instance != null)
+		{
+			UIRoot = GameUIRoot.Instance;
+		}
+		else if (gameUIPrefab != null)
+		{
+			UIRoot = Instantiate(gameUIPrefab);
+			UIRoot.name = gameUIPrefab.name;
+		}
+		
 		Rigidbody = GetComponent<Rigidbody>();
 		Input = GetComponent<InputManager>();
 		LedgeGrabSystem = GetComponent<LedgeGrabPlayerSystem>();
@@ -232,6 +247,8 @@ public class PlayerController : MonoBehaviour
 	
 	private void Update()
 	{
+		if (PauseManager.IsPaused) return;
+		
 		#if UNITY_EDITOR
 		currentStateName = StateMachine.CurrentState.GetType().Name;
 		#endif
