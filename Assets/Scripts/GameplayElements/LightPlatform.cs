@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using UnityEditor;
+using UnityEditor.SceneManagement;
 using UnityEngine;
 using Random = UnityEngine.Random;
 
@@ -145,6 +147,9 @@ public class LightPlatform : MonoBehaviour
     [ContextMenu("Regenerate Floating Rocks")]
     public void GenerateFloatingRocks()
     {
+#if UNITY_EDITOR
+	    Undo.RegisterCompleteObjectUndo(this, "Regenerate LightPlatform Rocks");
+	    
 	    // Clean potential old fragments
 	    for (int i = transform.childCount - 1; i >= 0; i--)
 	    {
@@ -234,6 +239,8 @@ public class LightPlatform : MonoBehaviour
                     Vector3 localPosInContainer = worldCenterOffset + offsetFromCenter;
 
                     GameObject rock = Instantiate(rockFragmentPrefab, container.transform);
+                    Undo.RegisterCreatedObjectUndo(rock, "Create Rock");
+                    
                     rock.name = $"RockFragment_{index++}";
                     rock.transform.localPosition = localPosInContainer;
                     rock.transform.localRotation = Random.rotation;
@@ -248,6 +255,14 @@ public class LightPlatform : MonoBehaviour
                 }
             } 
         }
+        
+        EditorUtility.SetDirty(this);
+        PrefabUtility.RecordPrefabInstancePropertyModifications(this);
+        if (!Application.isPlaying && gameObject.scene.IsValid())
+        {
+	        EditorSceneManager.MarkSceneDirty(gameObject.scene);
+        }
+#endif
     }
 
 
