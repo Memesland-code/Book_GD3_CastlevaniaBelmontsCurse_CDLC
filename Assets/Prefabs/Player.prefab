@@ -634,7 +634,7 @@ MonoBehaviour:
   maxAimAssistAngle: 40
   aimAssistKeepBonusAngle: 10
   neutralAimAngle: 40
-  whipCooldownDuration: 0.12
+  whipCooldownDuration: 0
   downwardAimAngle: 50
   downwardAimPenalty: 12
   blockedStates:

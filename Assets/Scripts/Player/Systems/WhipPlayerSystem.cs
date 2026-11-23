@@ -317,6 +317,12 @@ public class WhipPlayerSystem : MonoBehaviour
 	{
 		if (whipCooldownTimer > 0f || IsCurrentStateBlocked() || CurrentTargetedHook == null) return;
 
+		if (player.StateMachine.CurrentState == player.SlideState)
+		{
+			player.StateMachine.ChangeState(player.AirState);
+		}
+		player.SlideSystem?.ResetSlideImmediate();
+		
 		ActiveHook = CurrentTargetedHook;
 		IsThrowing = true;
 		
