@@ -76,7 +76,7 @@ public class PlayerGroundPoundState : PlayerState
 
 		for (int i = 0; i < hitCount; i++)
 		{
-			BreakablePlatform platform = castHits[i].collider.GetComponentInParent<BreakablePlatform>();
+			LightBreakablePlatform platform = castHits[i].collider.GetComponentInParent<LightBreakablePlatform>();
 			if (platform == null || platform.IsBroken) continue;
 
 			if (platform.CanBreakFromHeight(startY))

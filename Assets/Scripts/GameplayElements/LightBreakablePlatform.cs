@@ -1,7 +1,7 @@
 using UnityEngine;
 
 [RequireComponent(typeof(BoxCollider))]
-public class BreakablePlatform : MonoBehaviour
+public class LightBreakablePlatform : MonoBehaviour
 {
     [Header("Break Settings")]
     [Tooltip("Minimum fall distance (m) to break the platform")]

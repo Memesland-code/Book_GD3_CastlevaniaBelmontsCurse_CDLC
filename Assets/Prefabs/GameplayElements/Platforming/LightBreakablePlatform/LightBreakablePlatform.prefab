@@ -14,7 +14,7 @@ GameObject:
   - component: {fileID: 4781556708615642470}
   - component: {fileID: 5718470990630742550}
   m_Layer: 11
-  m_Name: BreakablePlatform
+  m_Name: LightBreakablePlatform
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

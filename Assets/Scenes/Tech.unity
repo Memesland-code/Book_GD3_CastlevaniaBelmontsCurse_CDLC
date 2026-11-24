@@ -24580,7 +24580,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7992542953743743863, guid: 064143c5ebd7fb54fa842b100d6af251, type: 3}
       propertyPath: m_Name
-      value: BreakablePlatform
+      value: LightBreakablePlatform
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
