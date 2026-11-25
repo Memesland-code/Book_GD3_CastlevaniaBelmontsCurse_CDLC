@@ -26,11 +26,8 @@ MonoBehaviour:
     m_path: Assets/Scenes/MainMenu.unity
     m_guid: 6e61a152142ac95488845f36117b13db
   - m_enabled: 1
-    m_path: Assets/Scenes/LD_Blocking_v1.unity
-    m_guid: 22bc000f00d333940b886633f3bb4bd2
-  - m_enabled: 1
-    m_path: Assets/Scenes/Tech.unity
-    m_guid: 570fb122c962e2340955e13f6de6d738
+    m_path: Assets/Scenes/Tech_FinalMap.unity
+    m_guid: e06b2f043a1553f438f2153a5bc9126c
   m_HasScriptingDefines: 0
   m_ScriptingDefines: []
   m_PlayerSettingsYaml:

@@ -7,12 +7,12 @@ public class MainMenuScript : MonoBehaviour
 	
 	public void OnClickStartLevelDesignDemo()
 	{
-		SceneManager.LoadScene("LD_Blocking_v1");
+		SceneManager.LoadScene("LD_Blocking_v2");
 	}
 
 	public void OnClickStartTechDemo()
 	{
-		SceneManager.LoadScene("Tech");
+		SceneManager.LoadScene("Tech_FinalMap");
 	}
 
 	public void OnClickOptions()
