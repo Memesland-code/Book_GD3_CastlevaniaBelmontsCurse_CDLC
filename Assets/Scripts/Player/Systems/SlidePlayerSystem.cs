@@ -66,7 +66,7 @@ public class SlidePlayerSystem : MonoBehaviour
 	public bool CanStandUp()
 	{
 		// Error margin to avoid detecting a wall
-		float checkRadius = player.CapsuleCollider.radius * 0.85f;
+		float checkRadius = player.CapsuleCollider.radius * 0.65f;
 		float minAllowedHeight = player.CapsuleCollider.radius * 2f;
 		float effectiveSlideHeight = Mathf.Max(slidingHeight, minAllowedHeight);
 		
