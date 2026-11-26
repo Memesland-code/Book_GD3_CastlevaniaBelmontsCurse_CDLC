@@ -178,13 +178,16 @@ public class GridInteractionPlayerSystem : MonoBehaviour
 #if UNITY_EDITOR
 	private void OnDrawGizmosSelected()
 	{
+		CapsuleCollider collider = GetComponent<CapsuleCollider>();
+		if (collider == null) return;
+		
 		PlayerController pc = player != null ? player : GetComponent<PlayerController>();
 		if (pc == null || !pc.IsGizmoEnabled(PlayerDebugGizmos.GridInteraction)) return;
 		
-		if (player.CapsuleCollider != null)
+		if (collider != null)
 		{
 			Vector3 grabCenter = transform.position + Vector3.up * GridHangHandHeight;
-			Vector3 grabSize = new(player.CapsuleCollider.radius * 1.6f, 0.4f, 1f);
+			Vector3 grabSize = new(collider.radius * 1.6f, 0.4f, 1f);
 
 			Gizmos.color = Color.magenta;
 			Gizmos.DrawWireCube(grabCenter, grabSize);

@@ -96,10 +96,14 @@ public class WallInteractionPlayerSystem : MonoBehaviour
 #if UNITY_EDITOR
 	private void OnDrawGizmosSelected()
 	{
-		PlayerController pc = player != null ? player : GetComponent<PlayerController>();
+		PlayerController localPlayer = GetComponent<PlayerController>();
+		CapsuleCollider collider = GetComponent<CapsuleCollider>();
+		if (collider == null || localPlayer == null) return;
+		
+		PlayerController pc = localPlayer != null ? localPlayer : GetComponent<PlayerController>();
 		if (pc == null || !pc.IsGizmoEnabled(PlayerDebugGizmos.WallInteraction)) return;
 		
-		Vector3 direction = Vector3.right * player.FacingDirection;
+		Vector3 direction = Vector3.right * localPlayer.FacingDirection;
 		Vector3 upperOrigin = transform.position + Vector3.up * WallCheckUpperHeight;
 		Vector3 lowerOrigin = transform.position + Vector3.up * WallCheckLowerHeight;
 

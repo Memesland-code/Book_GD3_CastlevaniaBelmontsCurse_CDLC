@@ -197,17 +197,21 @@ public class SlidePlayerSystem : MonoBehaviour
 #if UNITY_EDITOR
 	private void OnDrawGizmosSelected()
 	{
-		PlayerController pc = player != null ? player : GetComponent<PlayerController>();
+		PlayerController localPlayer = GetComponent<PlayerController>();
+		CapsuleCollider collider = GetComponent<CapsuleCollider>();
+		if (collider == null || localPlayer == null) return;
+		
+		PlayerController pc = localPlayer != null ? localPlayer : GetComponent<PlayerController>();
 		if (pc == null || !pc.IsGizmoEnabled(PlayerDebugGizmos.Slide)) return;
 		
-		if (player.CapsuleCollider != null)
+		if (localPlayer.CapsuleCollider != null)
 		{
-			float checkRadius = player.CapsuleCollider.radius * 0.85f;
-			float minAllowedHeight = player.CapsuleCollider.radius * 2f;
+			float checkRadius = localPlayer.CapsuleCollider.radius * 0.85f;
+			float minAllowedHeight = localPlayer.CapsuleCollider.radius * 2f;
 			float effectiveSlideHeight = Mathf.Max(SlidingHeight, minAllowedHeight);
 
 			Vector3 bottomSphere = transform.position + Vector3.up * effectiveSlideHeight;
-			Vector3 topSphere = transform.position + Vector3.up * (player.DefaultColliderHeight - checkRadius);
+			Vector3 topSphere = transform.position + Vector3.up * (localPlayer.DefaultColliderHeight - checkRadius);
 			if (topSphere.y < bottomSphere.y) topSphere = bottomSphere;
 
 			Gizmos.color = Application.isPlaying && !CanStandUp() ? Color.red : Color.green;
