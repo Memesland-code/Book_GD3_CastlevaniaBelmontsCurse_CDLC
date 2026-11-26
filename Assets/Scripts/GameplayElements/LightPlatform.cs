@@ -1,9 +1,10 @@
-using System;
 using System.Collections.Generic;
 using UnityEditor;
-using UnityEditor.SceneManagement;
 using UnityEngine;
 using Random = UnityEngine.Random;
+#if UNITY_EDITOR
+using UnityEditor.SceneManagement;
+#endif
 
 [RequireComponent(typeof(BoxCollider))]
 [RequireComponent(typeof(MeshRenderer))]
@@ -23,10 +24,12 @@ public class LightPlatform : MonoBehaviour
     
     [Header("Floating Rocks Settings")]
     [SerializeField] private GameObject rockFragmentPrefab;
+    [SerializeField] private Vector2 rockScaleRange = new(0.65f, 1.25f);
+    #if UNITY_EDITOR
     [SerializeField] private float rockDensity = 1.5f;
     [SerializeField] private int maxRockCount = 25;
-    [SerializeField] private Vector2 rockScaleRange = new(0.65f, 1.25f);
     [Min(0f)] [SerializeField] private float boundsMargin = 0.2f;
+    #endif
     
     [Header("Rock State Scales & Motion")]
     [Range(1f, 3f)][SerializeField] private float enlargedRockScaleMultiplier = 1.65f;

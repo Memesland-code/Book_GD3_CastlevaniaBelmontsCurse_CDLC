@@ -43,11 +43,11 @@ public class LedgeGrabPlayerSystem : MonoBehaviour
     public RaycastHit CurrentLedgeHit { get; private set; }
     
     
+    private RaycastHit debugTopHit;
 #if UNITY_EDITOR
     private bool debugHasWallHit;
     private RaycastHit debugWallHit;
     private bool debugTopBlocked;
-    private RaycastHit debugTopHit;
     private bool debugHasLedgeHit;
     private RaycastHit debugLedgeHit;
     private Vector3 debugLedgeRayStart;

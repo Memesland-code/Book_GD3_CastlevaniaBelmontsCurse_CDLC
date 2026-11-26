@@ -8,6 +8,12 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/SampleScene.unity
     guid: 8124e5870f4fd4c779e7a5f994e84ad1
+  - enabled: 1
+    path: Assets/Scenes/LD_Blocking_vFinal.unity
+    guid: fc087948955b81f4786d18934df76147
+  - enabled: 1
+    path: Assets/Scenes/Tech_FinalMap.unity
+    guid: e06b2f043a1553f438f2153a5bc9126c
   m_configObjects:
     com.unity.dt.app-ui: {fileID: 11400000, guid: 1b1c20d82303e4b5781c3ef50ac1449f, type: 2}
     com.unity.input.settings: {fileID: 11400000, guid: b8429637b6fe2fd40b19ee990a40c44c, type: 2}
