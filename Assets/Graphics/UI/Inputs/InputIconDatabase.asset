@@ -83,3 +83,4 @@ MonoBehaviour:
     sprite: {fileID: 0}
   - controlPath: '*/{Cancel}'
     sprite: {fileID: 0}
+  tmpSpriteAsset: {fileID: 11400000, guid: a380e5c7965dbf74e9749fd09cfe27a3, type: 2}

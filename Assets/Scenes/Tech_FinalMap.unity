@@ -1286,6 +1286,7 @@ GameObject:
   - component: {fileID: 628594014}
   - component: {fileID: 628594016}
   - component: {fileID: 628594015}
+  - component: {fileID: 628594017}
   m_Layer: 0
   m_Name: Text (TMP)
   m_TagString: Untagged
@@ -1332,7 +1333,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: Sample text
+  m_text: test <size=100%><sprite name="keyboard_z_0"></size> <size=100%><sprite name="keyboard_s_0"></size> <size=100%><sprite name="keyboard_q"></size> <size=100%><sprite name="keyboard_d_0"></size>
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -1351,7 +1352,7 @@ MonoBehaviour:
     bottomLeft: {r: 1, g: 1, b: 1, a: 1}
     bottomRight: {r: 1, g: 1, b: 1, a: 1}
   m_fontColorGradientPreset: {fileID: 0}
-  m_spriteAsset: {fileID: 0}
+  m_spriteAsset: {fileID: 11400000, guid: a380e5c7965dbf74e9749fd09cfe27a3, type: 2}
   m_tintAllSprites: 0
   m_StyleSheet: {fileID: 0}
   m_TextStyleHashCode: -1183493901
@@ -1456,6 +1457,21 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!114 &628594017
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 628594013}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4a67a0794c7232a48972c3ebc2f2945c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DynamicInputText
+  textTemplate: test {Move}
+  iconScalePercent: 100
+  editorPreviewDevice: 0
 --- !u!1 &800565179
 GameObject:
   m_ObjectHideFlags: 0
