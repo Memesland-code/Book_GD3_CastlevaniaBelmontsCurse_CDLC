@@ -631,7 +631,7 @@ MonoBehaviour:
   hookLayer:
     serializedVersion: 2
     m_Bits: 1024
-  whipRange: 12
+  whipRange: {x: 12, y: 6}
   maxAimAssistAngle: 40
   aimAssistKeepBonusAngle: 10
   neutralAimAngle: 40

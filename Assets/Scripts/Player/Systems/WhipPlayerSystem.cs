@@ -5,7 +5,7 @@ public class WhipPlayerSystem : MonoBehaviour
 {
     [Header("General & Detection")]
     [SerializeField] private LayerMask hookLayer;
-    [SerializeField] private float whipRange = 9f;
+    [SerializeField] private Vector2 whipRange = new(12f, 6f);
     [Tooltip("Max angle (degrees) around the aim point in which the whip can grab a hook")]
     [SerializeField] private float maxAimAssistAngle = 40f;
     [SerializeField] private float aimAssistKeepBonusAngle = 10f;
@@ -241,10 +241,12 @@ public class WhipPlayerSystem : MonoBehaviour
         Vector3 playerCenter = player.CapsuleCollider.bounds.center;
         Vector2 moveInput = player.Input != null ? player.Input.Move : Vector2.zero;
 
-        int count = Physics.OverlapSphereNonAlloc(
+        Vector3 halfExtents = new(whipRange.x, whipRange.y, 2f);
+        int count = Physics.OverlapBoxNonAlloc(
             playerCenter,
-            whipRange,
+            halfExtents,
             hitBuffer,
+            Quaternion.identity,
             hookLayer,
             QueryTriggerInteraction.Collide
         );
@@ -263,7 +265,7 @@ public class WhipPlayerSystem : MonoBehaviour
             Vector2 toHook2D = new(toHook3D.x, toHook3D.y);
             float distance = toHook2D.magnitude;
 
-            if (distance < 0.05f || distance > whipRange) continue;
+            if (distance < 0.05f || Mathf.Abs(toHook2D.x) > whipRange.x || Mathf.Abs(toHook2D.y) > whipRange.y) continue;
             
             if (Physics.Raycast(playerCenter, toHook3D.normalized, distance, player.SolidObstacleLayers, QueryTriggerInteraction.Ignore)) continue;
 
@@ -276,7 +278,12 @@ public class WhipPlayerSystem : MonoBehaviour
             float angle = EvaluateAimAngle(toHook2D.normalized, moveInput);
             if (angle <= allowedAngle)
             {
-                float score = (angle / maxAimAssistAngle) * 0.75f + (distance / whipRange) * 0.25f;
+	            float normalizedDist = Mathf.Clamp01(new Vector2(
+		            whipRange.x > 0.001f ? toHook2D.x / whipRange.x : 0,
+					whipRange.y > 0.001f ? toHook2D.y / whipRange.y : 0
+	            ).magnitude);
+	            
+                float score = (angle / maxAimAssistAngle) * 0.75f + normalizedDist * 0.25f;
                 if (score < bestScore)
                 {
                     bestScore = score;
@@ -391,7 +398,7 @@ public class WhipPlayerSystem : MonoBehaviour
 		Vector3 center = col != null ? col.bounds.center : transform.position + Vector3.up;
 
 		Gizmos.color = new Color(0.6f, 0.2f, 1f, 0.35f);
-		Gizmos.DrawWireSphere(center, whipRange);
+		Gizmos.DrawWireCube(center, new Vector3(whipRange.x * 2f, whipRange.y * 2f, 0.1f));
 	}
 #endif
 }
