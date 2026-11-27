@@ -71,7 +71,7 @@ MonoBehaviour:
   canRespawn: 1
   respawnDelay: 3
   visualRoot: {fileID: 1001481449198495252}
-  shakeIntensity: 0.05
+  shakeIntensity: 0.1
 --- !u!1 &4697812546259346914
 GameObject:
   m_ObjectHideFlags: 0

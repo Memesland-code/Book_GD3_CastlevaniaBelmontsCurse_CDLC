@@ -97300,7 +97300,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DynamicInputText
   textTemplate: 'While in air above the platform press down and {Jump}
 
-    This platform is too big to be broken at this height Try try to break it and go higher'
+    This platform is too big to be broken at this height. Try to break it and go higher'
   iconScalePercent: 100
   editorPreviewDevice: 0
 --- !u!114 &2007815911
@@ -97325,7 +97325,7 @@ MonoBehaviour:
       m_Calls: []
   m_text: 'While in air above the platform press down and <size=100%><sprite name="keyboard_space_icon_0"></size>
 
-    This platform is too big to be broken at this height Try try to break it and go higher'
+    This platform is too big to be broken at this height. Try to break it and go higher'
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -97391,7 +97391,7 @@ MonoBehaviour:
   m_VertexBufferAutoSizeReduction: 0
   m_useMaxVisibleDescender: 1
   m_pageToDisplay: 1
-  m_margin: {x: 0, y: 0, z: 0, w: 0}
+  m_margin: {x: 0, y: 0, z: 0, w: -0.94823074}
   m_isUsingLegacyAnimationComponent: 0
   m_isVolumetricText: 0
   _SortingLayer: 0
